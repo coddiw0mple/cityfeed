@@ -5,9 +5,9 @@ raw listings, 284 canonical events, 72 venues (57 geocoded), zero model calls in
 the pipeline.** Every number in this file came from running the thing against
 the real web on 2026-07-31. Where a number is bad, it is written down as it is.
 
-**Live:** [cityfeed.vercel.app](https://cityfeed.vercel.app) ·
-[/live.html](https://cityfeed.vercel.app/live.html) (same page, served from the API) ·
-[/docs](https://cityfeed.vercel.app/docs)
+**Live:** [cityfeed-delft.vercel.app](https://cityfeed-delft.vercel.app) ·
+[/live.html](https://cityfeed-delft.vercel.app/live.html) (same page, served from the API) ·
+[/docs](https://cityfeed-delft.vercel.app/docs)
 
 ```bash
 cityfeed probe --file urls_delft.txt   # what tier is this URL?
