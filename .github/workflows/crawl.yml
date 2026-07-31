@@ -1,0 +1,80 @@
+# Why the crawl lives here and not in the API: a Vercel function has a
+# read-only filesystem and a seconds-long budget, while a polite crawl takes
+# minutes (one request per second per host, by design). So CI does the writing
+# and Vercel only ever reads. The committed database is the hand-off.
+name: crawl
+
+on:
+  schedule:
+    # Twice a day, offset from the hour so we are not in the thundering herd
+    # that hits every venue site at :00.
+    - cron: "17 5 * * *"
+    - cron: "17 17 * * *"
+  workflow_dispatch:
+
+# The job commits the refreshed database back to the default branch, which is
+# what triggers Vercel's redeploy.
+permissions:
+  contents: write
+
+concurrency:
+  group: crawl
+  cancel-in-progress: false
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - run: pip install -e ".[dev,serve]"
+
+      - name: Crawl Delft
+        run: |
+          {
+            echo '## crawl'
+            echo '```'
+            cityfeed run --city Delft
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Measure recall against held-out sources
+        # Never fails the build. Recall going down is a finding about the city's
+        # sources, not a broken pipeline, and hiding it behind a red X would
+        # teach everyone to ignore it.
+        continue-on-error: true
+        run: |
+          {
+            echo '## recall'
+            echo '```'
+            cityfeed recall --city Delft --capture-recapture
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Venue geocoding state
+        continue-on-error: true
+        run: |
+          {
+            echo '## venues'
+            echo '```'
+            cityfeed venues --city Delft | tail -20
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit the refreshed database
+        run: |
+          git config user.name  "cityfeed-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/cityfeed.db
+          if git diff --staged --quiet; then
+            echo "no change in the database; nothing to deploy"
+          else
+            git commit -m "crawl: Delft $(date -u '+%Y-%m-%d %H:%MZ')"
+            git push
+          fi

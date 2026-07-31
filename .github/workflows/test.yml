@@ -1,0 +1,36 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - run: pip install -e ".[dev,serve]"
+
+      # The suite touches no network by design: the corpus is pinned to saved
+      # payloads, so a red build means the code moved, never that the web did.
+      - run: pytest -q
+
+      - name: Holdouts must stay held out
+        # Cheap, and the one invariant whose violation is silent: a leaked
+        # holdout does not break anything visible, it just quietly turns the
+        # recall figure into a self-assessment.
+        run: |
+          python -c "
+          from cityfeed.fetch import assert_holdouts_are_held_out
+          assert_holdouts_are_held_out('sources')
+          print('holdout registries are clean')
+          "
