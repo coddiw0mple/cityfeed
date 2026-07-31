@@ -34,6 +34,7 @@ import re
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Iterable, Optional, Protocol
 
 import httpx
@@ -154,6 +155,48 @@ def in_bbox(lat: float, lon: float, city: str) -> bool:
     return min_lat <= lat <= max_lat and min_lon <= lon <= max_lon
 
 
+# Cruft that venue names carry on real sites. Stripped before querying because
+# a geocoder matching "Café X | Delft — Officiële site" against its address
+# index will find nothing, and the failure is indistinguishable from a venue
+# that genuinely does not exist.
+_NAME_NOISE = re.compile(
+    r"\s*(\||—|–|-|·|:)\s*(offici[eë]le\s+site|official\s+site|home|homepage"
+    r"|tickets?|agenda|programma|welkom|website)\s*$",
+    re.I,
+)
+_TRAILING_CITY = re.compile(r"\s*[\|\-–—,(]\s*(?:in\s+)?%s\s*\)?\s*$", re.I)
+# Names too generic to resolve anywhere: "the church", "the centre".
+_GENERIC = re.compile(
+    r"^(de|het|the)?\s*(kerk|church|centrum|centre|center|zaal|hall|hok|room|foyer"
+    r"|pub|bar|caf[eé]|theater|theatre|museum|bibliotheek|library)\s*$",
+    re.I,
+)
+
+
+def clean_venue_name(name: str, city: str) -> str:
+    """Strip the decoration a site puts around its own name.
+
+    Site titles get reused as venue names and arrive carrying separators, the
+    city, and marketing ("Officiële site"). Each of those turns a resolvable
+    query into an unresolvable one, and the resulting null looks exactly like a
+    venue nobody can find.
+    """
+    cleaned = (name or "").strip()
+    for _ in range(3):  # suffixes stack: "X | Delft | Officiële site"
+        before = cleaned
+        cleaned = _NAME_NOISE.sub("", cleaned)
+        cleaned = re.sub(_TRAILING_CITY.pattern % re.escape(city), "", cleaned, flags=re.I)
+        cleaned = cleaned.strip(" -|–—·:,")
+        if cleaned == before:
+            break
+    return cleaned or (name or "").strip()
+
+
+def is_generic_name(name: str) -> bool:
+    """True for names no geocoder could resolve, so we do not spend a call."""
+    return bool(_GENERIC.match((name or "").strip()))
+
+
 def query_ladder(name: str, address: Optional[str], city: str) -> list[str]:
     """Queries from most specific to least, deduplicated.
 
@@ -162,14 +205,39 @@ def query_ladder(name: str, address: Optional[str], city: str) -> list[str]:
     it always resolves to *something* and so is the weakest evidence that we
     found the right place.
     """
+    name = clean_venue_name(name, city)
     candidates = []
-    if name and address:
-        candidates.append(f"{name}, {address}, {city}")
-    if name:
+    if name and not is_generic_name(name):
+        if address:
+            candidates.append(f"{name}, {address}, {city}")
         candidates.append(f"{name}, {city}")
     if address:
         candidates.append(f"{address}, {city}")
     return list(dict.fromkeys(q for q in candidates if q.strip(" ,")))
+
+
+def load_overrides(directory: str | Path = "sources") -> dict[str, tuple[float, float]]:
+    """Hand-written coordinates for venues no geocoder will resolve.
+
+    Ten hand-written points is a completely reasonable thing to own, and much
+    more honest than a heuristic that guesses. Keyed on the normalised venue
+    name so it survives the spelling differences between sources.
+    """
+    import yaml
+
+    from .normalize import normalize_title
+
+    path = Path(directory) / "venue_overrides.yaml"
+    if not path.exists():
+        return {}
+    raw = yaml.safe_load(path.read_text()) or {}
+    out: dict[str, tuple[float, float]] = {}
+    for entry in raw.get("venues", []):
+        try:
+            out[normalize_title(entry["name"])] = (float(entry["lat"]), float(entry["lon"]))
+        except (KeyError, TypeError, ValueError):
+            continue
+    return out
 
 
 class Geocoder:
@@ -180,11 +248,16 @@ class Geocoder:
         conn: sqlite3.Connection,
         providers: Optional[list[Provider]] = None,
         client: Optional[httpx.AsyncClient] = None,
+        overrides_dir: Optional[str | Path] = "sources",
     ) -> None:
         self.conn = conn
         self.providers = providers if providers is not None else [PDOKProvider(), NominatimProvider()]
         self._client = client
         self.calls = 0  # network lookups this run; the second-run-is-free assertion
+        self.overrides = load_overrides(overrides_dir) if overrides_dir else {}
+        # Every query tried and what came back, so an unresolved venue is a
+        # diagnosis rather than a shrug.
+        self.attempts: dict[str, list[str]] = {}
 
     def cached(self, key: str) -> Optional[tuple[float, float, str]]:
         row = self.conn.execute(
@@ -225,6 +298,19 @@ class Geocoder:
 
     async def resolve(self, venue: Venue, city: str) -> Optional[GeocodeResult]:
         """Try every query against every provider, in order, until one lands."""
+        from .normalize import normalize_title
+
+        log: list[str] = []
+        self.attempts[venue.name] = log
+
+        if hit := self.overrides.get(normalize_title(clean_venue_name(venue.name, city))):
+            log.append("manual override")
+            return GeocodeResult(hit[0], hit[1], "override", "manual", 1.0)
+
+        if is_generic_name(clean_venue_name(venue.name, city)):
+            log.append("name too generic to query")
+            return None
+
         owns_client = self._client is None
         client = self._client or httpx.AsyncClient(timeout=20.0, follow_redirects=True)
         try:
@@ -233,11 +319,17 @@ class Geocoder:
                     self.calls += 1
                     result = await provider.lookup(client, query)
                     if result is None:
+                        log.append(f"{provider.name}: no match for {query!r}")
                         continue
                     if not in_bbox(result.lat, result.lon, city):
                         # Rejected, not accepted-with-low-confidence. A pin in
                         # the wrong province is worse than no pin at all.
+                        log.append(
+                            f"{provider.name}: {query!r} -> "
+                            f"{result.lat:.4f},{result.lon:.4f} outside {city}"
+                        )
                         continue
+                    log.append(f"{provider.name}: matched {query!r}")
                     return result
         finally:
             if owns_client:

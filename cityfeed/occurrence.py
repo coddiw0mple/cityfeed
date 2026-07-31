@@ -129,7 +129,7 @@ def expand_rrule(
     from dateutil.rrule import rrulestr
 
     rules, rdates, exdates = _split_rrule(rrule)
-    if not rules:
+    if not rules and not rdates:
         return [start]
 
     # Expand against a naive local wall clock, then re-attach the zone. This is
@@ -138,7 +138,16 @@ def expand_rrule(
     # clock and localising afterwards keeps every occurrence at 20:00 local.
     naive_start = start.astimezone(tz).replace(tzinfo=None)
     try:
-        rule = rrulestr("\n".join(rules), dtstart=naive_start, forceset=True)
+        if rules:
+            rule = rrulestr("\n".join(rules), dtstart=naive_start, forceset=True)
+        else:
+            # RDATE with no RRULE is a legitimate shape -- it is what repeat
+            # collapsing produces, an explicit list of dates with no pattern.
+            # rrulestr needs a rule, so the set is built directly instead.
+            from dateutil.rrule import rruleset
+
+            rule = rruleset()
+            rule.rdate(naive_start)
     except (ValueError, TypeError):
         # An unparseable rule is a source-quality problem, not a reason to lose
         # the event: fall back to the single date we were given.
@@ -201,3 +210,51 @@ def expand_all(
     for event in events:
         rows.extend(occurrences_for(event, timezone, horizon_days, now))
     return rows
+
+
+def collapse_repeats(records: list, spec) -> list:
+    """Fold repeated showings of one title at one venue into a single record.
+
+    A cinema publishes one row per screening: the same film five times a day,
+    thirty times a week. Each is a real showing, but they are not thirty events
+    — they are one film with thirty dates, and storing them as separate
+    canonical events distorts every count in the system: the source contributes
+    40% of the corpus, "same title × 11" fires, and the map shows one venue with
+    seventy identical pins.
+
+    The dates are not lost. The earliest record becomes the series and the rest
+    become RDATEs on it, so the occurrence expansion materialises every showing
+    exactly as before. What changes is that dedup, the category counts and the
+    dashboard now see one event, which is what a reader means by one.
+
+    Deliberately keyed on title *and* venue: the same film at two cinemas is two
+    programmes, and a reader choosing where to go needs both.
+    """
+    from collections import defaultdict
+
+    from .normalize import normalize_title
+
+    if not getattr(spec, "collapse_repeats", False):
+        return records
+
+    groups: dict[tuple[str, str], list] = defaultdict(list)
+    for record in records:
+        venue = record.venue.name if record.venue else ""
+        groups[(normalize_title(record.title), venue)].append(record)
+
+    collapsed = []
+    for members in groups.values():
+        members.sort(key=lambda r: r.start)
+        primary = members[0]
+        if len(members) > 1:
+            # RDATE carries the remaining showings, so nothing is dropped and
+            # the existing expander needs no special case for this shape.
+            extra = ",".join(
+                r.start.strftime("%Y%m%dT%H%M%S") for r in members[1:]
+            )
+            rule = f"RDATE:{extra}"
+            primary = primary.model_copy(
+                update={"rrule": f"{primary.rrule}\n{rule}" if primary.rrule else rule}
+            )
+        collapsed.append(primary)
+    return collapsed

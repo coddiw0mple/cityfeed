@@ -182,7 +182,7 @@ input[type=range]{width:100%;accent-color:var(--signal)}
 <div class="shell">
   <header>
     <div class="wordmark">city<span>feed</span></div>
-    <div class="tagline">public event ingestion &middot; Delft &amp; Madrid &middot; canonical view</div>
+    <div class="tagline" id="tagline">public event ingestion</div>
     <div class="counters">
       <div class="counter"><b id="c-total">0</b><span>shown</span></div>
       <div class="counter"><b id="c-corr">0</b><span>2+ sources</span></div>
@@ -197,11 +197,10 @@ input[type=range]{width:100%;accent-color:var(--signal)}
   <aside id="filters">
     <div class="grp">
       <div class="grp-h">City</div>
-      <div class="seg" id="cityseg">
-        <button data-city="all" aria-pressed="true">All</button>
-        <button data-city="Delft" aria-pressed="false">Delft</button>
-        <button data-city="Madrid" aria-pressed="false">Madrid</button>
-      </div>
+      <!-- Built from the data at runtime. A hard-coded city list goes stale
+           the moment a registry changes, and a selector offering a city with
+           no events is worse than no selector. -->
+      <div class="seg" id="cityseg"></div>
     </div>
 
     <div class="grp">
@@ -230,7 +229,7 @@ input[type=range]{width:100%;accent-color:var(--signal)}
 
   <main>
     <div id="map"></div>
-    <div class="tilewarn">Map tiles unreachable — showing positions on a grid. Open this file locally for the full basemap.</div>
+    <div class="tilewarn">Map tiles unreachable — showing positions on a grid. Coordinates are still accurate.</div>
     <div class="legend">
       <b>Corroboration</b>
       <div><i class="k"></i> 1 source</div>
@@ -332,6 +331,39 @@ setTimeout(() => { if(!tileOk) mapEl.classList.add("tiles-down"); }, 2600);
 
 const markers = new Map();
 
+/* --------------------------------------------------------- city controls */
+
+/* The city list is whatever the data contains. With one city the selector is
+   removed entirely rather than shown with a single option, and the tagline
+   names that city instead of claiming a coverage the build does not have. */
+function renderCities(){
+  const cities = [...new Set(EVENTS.map(e => e.city).filter(Boolean))].sort();
+  const seg = document.getElementById("cityseg");
+  const group = seg && seg.closest(".grp");
+
+  const tagline = document.getElementById("tagline");
+  if(tagline){
+    const where = cities.length ? cities.join(" · ") : "no data";
+    tagline.textContent = `public event ingestion · ${where} · canonical view`;
+  }
+
+  if(!seg) return;
+  if(cities.length < 2){
+    if(group) group.style.display = "none";
+    state.city = "all";
+    return;
+  }
+  if(group) group.style.display = "";
+  seg.innerHTML = "";
+  for(const [value, label] of [["all", "All"], ...cities.map(c => [c, c])]){
+    const b = document.createElement("button");
+    b.dataset.city = value;
+    b.textContent = label;
+    b.setAttribute("aria-pressed", String(state.city === value));
+    seg.appendChild(b);
+  }
+}
+
 /* ------------------------------------------------------------ api mode */
 
 /* Map the API's shape onto the one the renderers already speak, so every
@@ -404,6 +436,7 @@ async function loadFromApi(){
   /* A slow first request must not overwrite a newer one's results. */
   if(token !== inflight) return;
   EVENTS = rows;
+  renderCities();
   renderCats();
   render();
 }
@@ -653,7 +686,7 @@ document.getElementById("togglefilters").onclick = ev => {
 document.addEventListener("keydown", e => { if(e.key === "Escape" && state.selected){ state.selected=null; render(); } });
 
 /* Inline mode renders immediately; API mode paints the shell, then fills it. */
-if(USE_API){ renderCats(); render(); loadFromApi(); } else { render(); }
+if(USE_API){ renderCities(); renderCats(); render(); loadFromApi(); } else { renderCities(); render(); }
 </script>
 </body>
 </html>

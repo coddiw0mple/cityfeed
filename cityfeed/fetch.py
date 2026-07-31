@@ -19,6 +19,7 @@ import asyncio
 import gzip
 import hashlib
 import json
+import re
 from datetime import datetime, timezone as dt_timezone
 from pathlib import Path
 from typing import Optional
@@ -141,6 +142,58 @@ class SnapshotStore:
         return latest["digest"] if latest else None
 
 
+_META_CHARSET = re.compile(
+    rb"""<meta[^>]+charset\s*=\s*["\']?\s*([a-zA-Z0-9_\-]+)""", re.I
+)
+# The signature of UTF-8 read as Latin-1: 'CafÃ©' where 'Café' was meant.
+_MOJIBAKE = re.compile(r"Ã[©¨«¯´¶¼½\x80-\xbf]|â€|Â[ ©«°»]|ï¿½")
+
+
+def decode_payload(content: bytes, content_type: str = "") -> str:
+    """Turn bytes into text, in the order the standards say to try.
+
+    Encoding is the single most common cosmetic defect on Dutch venue sites and
+    it never raises: UTF-8 bytes decoded as Latin-1 give 'CafÃ© de Wijnhaven',
+    which parses fine, stores fine, and is wrong on every screen it reaches.
+
+    Fixed here rather than in extraction because this is the only place the
+    bytes still exist. Once a payload has been decoded wrongly the information
+    needed to decode it correctly is gone, and everything downstream is reduced
+    to guessing which mangled sequences to substitute.
+
+    Order: the HTTP header wins (the server is authoritative about what it
+    sent), then the document's own meta charset, then UTF-8, then a Latin-1
+    fallback that cannot fail. A decode that succeeds but leaves mojibake
+    behind is treated as a failure and retried, because "no exception" is not
+    the same as "correct".
+    """
+    import unicodedata
+
+    candidates: list[str] = []
+    if match := re.search(r"charset=([\w\-]+)", content_type or "", re.I):
+        candidates.append(match.group(1))
+    if meta := _META_CHARSET.search(content[:4096]):
+        candidates.append(meta.group(1).decode("ascii", "ignore"))
+    candidates += ["utf-8", "cp1252", "latin-1"]
+
+    best: Optional[str] = None
+    for encoding in candidates:
+        try:
+            text = content.decode(encoding)
+        except (UnicodeDecodeError, LookupError):
+            continue
+        if not _MOJIBAKE.search(text):
+            best = text
+            break
+        best = best if best is not None else text
+
+    if best is None:
+        best = content.decode("utf-8", "replace")
+    # NFC so that "é" written as e+combining-accent compares equal to the
+    # precomposed form; otherwise two spellings of one venue never match.
+    return unicodedata.normalize("NFC", best)
+
+
 class Fetcher:
     """HTTP client with conditional GETs and per-source ETag memory.
 
@@ -188,7 +241,10 @@ class Fetcher:
         if modified := response.headers.get("last-modified"):
             self._last_modified[spec.id] = modified
 
-        content = response.text
+        # response.text applies httpx's own charset guess; decoding the raw
+        # bytes ourselves is what lets the meta charset and the mojibake retry
+        # participate in the decision.
+        content = decode_payload(response.content, response.headers.get("content-type", ""))
         if spec.type is SourceType.JSONLD_INDEX:
             content = await self._crawl_index(spec, content, str(response.url))
         self.store.put(spec.id, content)

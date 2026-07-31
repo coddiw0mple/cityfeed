@@ -7,6 +7,7 @@
     cityfeed run --city Delft              fetch, extract, dedup, store
     cityfeed run --offline --fixtures DIR  same, from saved payloads
     cityfeed recall --city Delft           measure recall against holdouts
+    cityfeed audit --city Delft            data-quality findings by severity
     cityfeed evaluate --gold gold.json     score output against ground truth
 
 The --offline path exists so the pipeline can be developed and graded without
@@ -26,7 +27,7 @@ from pathlib import Path
 
 from .dedup import deduplicate
 from .evaluate import evaluate, load_gold
-from .extract import ExtractionError, extract
+from .extract import ExtractContext, ExtractionError, extract
 from .fetch import (
     Fetcher, SnapshotStore, assert_holdouts_are_held_out, load_registries,
 )
@@ -62,6 +63,7 @@ CREATE TABLE IF NOT EXISTS events (
     is_free     INTEGER,
     price       TEXT,
     rrule       TEXT,
+    description TEXT,
     category    TEXT,
     confidence  REAL,
     source_ids  TEXT NOT NULL,
@@ -100,10 +102,23 @@ CREATE TABLE IF NOT EXISTS source_runs (
 """
 
 
+# Columns added after the first release. CREATE TABLE IF NOT EXISTS will not
+# add a column to a table that already exists, so an already-deployed database
+# needs them applied explicitly or every read of the new field fails.
+_MIGRATIONS = [
+    ("events", "description", "TEXT"),
+]
+
+
 def connect(path: str = "data/cityfeed.db") -> sqlite3.Connection:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path)
     conn.executescript(SCHEMA)
+    for table, column, coltype in _MIGRATIONS:
+        existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in existing:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
+    conn.commit()
     return conn
 
 
@@ -160,6 +175,7 @@ def persist(conn: sqlite3.Connection, events: list[CanonicalEvent]) -> None:
             None if e.is_free is None else int(e.is_free),
             e.price,
             e.rrule,
+            e.description,
             e.category,
             e.confidence,
             ",".join(e.source_ids),
@@ -181,7 +197,7 @@ def persist(conn: sqlite3.Connection, events: list[CanonicalEvent]) -> None:
         for e in events
     ]
     conn.executemany(
-        "INSERT OR REPLACE INTO events VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows
+        "INSERT OR REPLACE INTO events VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows
     )
     conn.commit()
 
@@ -253,7 +269,12 @@ def _payload_for(spec: SourceSpec, fixtures: Path | None, store: SnapshotStore):
     return store.get(digest) if digest else None
 
 
-async def _gather(specs: list[SourceSpec], offline: bool, fixtures: Path | None):
+async def _gather(
+    specs: list[SourceSpec],
+    offline: bool,
+    fixtures: Path | None,
+    context: ExtractContext | None = None,
+):
     store = SnapshotStore()
     fetcher = Fetcher(store)
     records, stats = [], {}
@@ -269,7 +290,7 @@ async def _gather(specs: list[SourceSpec], offline: bool, fixtures: Path | None)
             if payload is None:
                 stats[spec.id] = "no payload"
                 continue
-            found = extract(payload, spec)
+            found = extract(payload, spec, context=context)
             records.extend(found)
             stats[spec.id] = f"{len(found)} records" + ("" if changed else " (unchanged)")
         except ExtractionError as exc:
@@ -281,6 +302,19 @@ async def _gather(specs: list[SourceSpec], offline: bool, fixtures: Path | None)
     return records, stats
 
 
+def _known_venue_names(db: str, city: str | None) -> set[str]:
+    """Lower-cased venue names from the store, for RSS event detection."""
+    try:
+        conn = connect(db)
+        rows = conn.execute(
+            "SELECT name FROM venues WHERE ? IS NULL OR LOWER(city) = LOWER(?)",
+            (city, city),
+        ).fetchall()
+        return {r[0].lower() for r in rows if r[0]}
+    except sqlite3.Error:
+        return set()
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     # Before anything is fetched. A holdout that has leaked into the ingested
     # registry does not break the crawl -- it silently turns the recall figure
@@ -289,6 +323,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     assert_holdouts_are_held_out(args.registry)
 
     specs = load_registries(args.registry)
+    city_hint = args.city
     if args.city:
         specs = [s for s in specs if s.city.lower() == args.city.lower()]
     if not specs:
@@ -296,13 +331,32 @@ def cmd_run(args: argparse.Namespace) -> int:
         return 1
 
     fixtures = Path(args.fixtures) if args.fixtures else None
-    records, stats = asyncio.run(_gather(specs, args.offline, fixtures))
+
+    # Venue names the store already knows, so an RSS item that mentions one can
+    # be recognised as an event even when its URL and time say nothing.
+    context = ExtractContext(known_venues=_known_venue_names(args.db, city_hint))
+    records, stats = asyncio.run(_gather(specs, args.offline, fixtures, context))
 
     print("source health")
     print("-" * 52)
     for source_id, status in stats.items():
         flag = "!" if status.startswith(("FAILED", "ERROR", "no payload")) else " "
         print(f" {flag} {source_id:<32} {status}")
+        for reason, n in sorted(context.for_source(source_id).items()):
+            print(f"   {'':<32} dropped {n}: {reason}")
+
+    # A source dropping most of what it publishes is not an event feed. Saying
+    # so here is the difference between a registry row that looks healthy and
+    # one you know to go and disable.
+    for spec in specs:
+        dropped = sum(context.for_source(spec.id).values())
+        kept = sum(1 for r in records if r.source_id == spec.id)
+        if dropped and dropped / (dropped + kept) > 0.70:
+            print(
+                f"\n  ! {spec.id}: dropped {dropped} of {dropped + kept} items "
+                f"({dropped / (dropped + kept):.0%}). This is probably not an "
+                f"event feed - consider disabling it with a note."
+            )
 
     city = args.city or (specs[0].city if specs else "unknown")
     locale = specs[0].locale if specs else "nl"
@@ -459,6 +513,21 @@ def cmd_probe(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_audit(args: argparse.Namespace) -> int:
+    """Report data-quality findings. Non-zero exit if any ERROR fired."""
+    from .audit import ERROR, audit
+
+    conn = connect(args.db)
+    report = audit(conn, args.city)
+    if args.json:
+        print(json.dumps(report.to_dict(), indent=2, default=str))
+    else:
+        print(report.render())
+    # Non-zero so this can gate a crawl in CI: an ERROR means the database
+    # holds something a user would see and believe, and that is false.
+    return 1 if report.errors else 0
+
+
 def cmd_recall(args: argparse.Namespace) -> int:
     from .recall import run_recall
 
@@ -525,6 +594,12 @@ def main(argv: list[str] | None = None) -> int:
     p_probe.add_argument("--no-sitemap", action="store_true", help="skip the sitemap fallback")
     p_probe.add_argument("--out", help="write the suggested YAML to this path")
     p_probe.set_defaults(func=cmd_probe)
+
+    p_audit = sub.add_parser("audit", help="data-quality checks over stored events")
+    p_audit.add_argument("--city", required=True)
+    p_audit.add_argument("--json", action="store_true", help="machine-readable output")
+    p_audit.add_argument("--db", default="data/cityfeed.db")
+    p_audit.set_defaults(func=cmd_audit)
 
     p_recall = sub.add_parser("recall", help="measure recall against held-out sources")
     p_recall.add_argument("--city", required=True)

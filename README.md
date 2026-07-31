@@ -1,9 +1,10 @@
 # cityfeed
 
-Public event ingestion for one city at a time. Delft is live: **8 sources, 288
-raw listings, 284 canonical events, 72 venues (57 geocoded), zero model calls in
-the pipeline.** Every number in this file came from running the thing against
-the real web on 2026-07-31. Where a number is bad, it is written down as it is.
+Public event ingestion for one city at a time. Delft is live: **8 sources, 237
+raw listings, 232 canonical events, 283 dated occurrences, 73 venues (68
+geocoded), zero model calls in the pipeline.** Every number in this file came
+from running the thing against the real web on 2026-07-31. Where a number is
+bad, it is written down as it is.
 
 **Live:** [cityfeed-delft.vercel.app](https://cityfeed-delft.vercel.app) ·
 [/live.html](https://cityfeed-delft.vercel.app/live.html) (same page, served from the API) ·
@@ -13,6 +14,7 @@ the real web on 2026-07-31. Where a number is bad, it is written down as it is.
 cityfeed probe --file urls_delft.txt   # what tier is this URL?
 cityfeed run --city Delft              # fetch, extract, geocode, dedup, store
 cityfeed recall --city Delft           # what did we miss?
+cityfeed audit --city Delft            # is what we kept any good?
 cityfeed venues --city Delft           # where are they, and which didn't resolve
 uvicorn cityfeed.api:app               # serve it
 ```
@@ -83,6 +85,64 @@ written to exercise the pipeline will always flatter it. The end-to-end score in
 the test suite grades the matcher and the merge; it is not a coverage claim about
 Delft, and no number in this README comes from it.
 
+### Data quality: what the audit found
+
+`cityfeed recall` answers "what did we miss?". `cityfeed audit` answers the
+other half — "is what we kept any good?" — and it is the half that is easy to
+skip, because bad rows do not raise. A newspaper column stored as a midnight
+event with no venue looks, to every counter in the system, exactly like a real
+event. 34 checks, grouped ERROR / WARN / INFO; a non-zero exit on any ERROR so
+it can gate a crawl.
+
+Running it, then fixing what it found:
+
+| check | before | after | what changed |
+|---|---|---|---|
+| `text.raw_html` | **115** | **0** | ICS `DESCRIPTION` carries `<br>` and `<a href>`. Stripped at extraction. |
+| `venue.ungeocoded_rate` | 15 | **5** | Name cleaning + 13 hand-written room coordinates. |
+| `volume.repeated_title` | 1 | **0** | 11 screenings of one film collapsed into one series. |
+| `dedup.missed_merges` | 1 | **0** | Midnight now reads as "time unknown", not "starts at 00:00". |
+| `venue.bad_name` | 1 | **0** | A venue literally named "Delft". |
+| `temporal.long_duration` | 35 | 34 | Mostly real: month-long exhibitions. |
+| canonical events | 286 | **232** | Repeats collapsed; the dates survive as occurrences. |
+
+The `raw_html` finding is the instructive one. It was **not** a regression —
+descriptions had never been persisted before, so 115 corrupted rows had been
+sitting in every crawl, invisible, since the beginning. The check did not find a
+new bug; it found an old one that nothing had been looking at.
+
+**Zero ERROR-severity findings remain.** Five WARNs do, each understood:
+
+- `temporal.long_duration` (34) — indelft.nl lists month-long exhibitions as
+  single events. Genuinely long, not a parse failure.
+- `venue.near_duplicates` (7) — address-shaped venue names differing by
+  punctuation (`Schieweg 15B` / `Schieweg 15-B`) and TU Delft room-name
+  variants. Would need fuzzy venue resolution, which risks merging real
+  neighbours.
+- `text.title_shape` (4) — popdelft.nl genuinely types its titles in caps.
+  Source style, not corruption.
+- `volume.source_dominance` (1) — the TU Delft association is 49% of the
+  corpus. Its 115 events are distinct activities, not repeats, so there is
+  nothing to collapse; the honest fix is more non-university sources.
+- `temporal.small_hours` (1) — one indelft.nl event at 04:03, where the feed
+  published a record-creation timestamp as `startDate`.
+
+### On not tuning blindly
+
+The single missed merge was `Delft Jazz` listed by popdelft.nl at 00:00 against
+the same festival at 19:00 from the theatre. The tempting fix is widening the
+dedup time tolerance — but 19 hours of tolerance would merge unrelated events
+all day long. The actual cause was that popdelft publishes *no time* for that
+listing: the card reads "wo 19 augustus 2026" and nothing more.
+
+So the change was to the semantics rather than the threshold: exact midnight now
+means "time unknown" and scores neutral against any time on the same day, the
+same treatment a missing venue already got. Re-running the audit confirmed it
+closed the missed merge **and** created one over-merge warning — the same pair,
+now merged, flagged because its members' times differ. That check was reading
+midnight literally too, so it now uses the same rule. Both are zero. Changing
+one thing and re-measuring is the only reason it is possible to say that.
+
 ---
 
 ## 2. Tiered extraction
@@ -96,8 +156,8 @@ Delft, and no number in this README comes from it.
 | `wrapper` | 1 model call per *domain*, cached | 2 |
 | `prose` | 1 model call per *page* | 0 |
 
-**6 of 8 enabled Delft sources parse with zero model calls, covering 266 of 288
-listings (92%).** The other two are cached CSS templates induced once and
+**6 of 8 enabled Delft sources parse with zero model calls, covering 215 of 237
+listings (91%).** The other two are cached CSS templates induced once and
 replayed for free. Nothing in the crawl path calls a model, ever.
 
 The commercially interesting part is how many sources *look* like tier 2 from
@@ -105,7 +165,8 @@ outside and are tier 0 inside:
 
 - **Filmhuis Lumen** publishes an RSS feed of blog posts and no visible
   programme. Its screenings sit in a WordPress custom post type readable at
-  `/wp-json/wp/v2/shows` — 100 dated, priced records, free.
+  `/wp-json/wp/v2/shows` — 49 dated, priced series, free (100 individual
+  screenings, collapsed by title).
 - **Theater de Veste**'s programme page carries only a `WebSite` block. Every
   detail page behind it has a complete `schema.org/Event` with `doorTime` and
   coordinates. Two levels, still zero tokens (`jsonld_index`).
@@ -140,12 +201,12 @@ with a model call.
 
 ## 3. Deduplication
 
-288 raw listings → **284 canonical events. 4 merged, a 1.4% duplication rate.**
+237 raw listings → **232 canonical events. 5 merged, a 2.1% duplication rate.**
 
 That rate is low, and not because the matcher is weak: Delft's sources barely
-overlap. 215 of 288 listings come from two sources — a cinema and a student
-association — that nothing else lists. The only real overlap is Theater de Veste,
-carried by its own site plus two aggregators, and all 4 merges are there. A
+overlap. 164 of 237 listings come from two sources — a student association and a
+cinema — that nothing else lists. The only real overlap is Theater de Veste,
+carried by its own site plus two aggregators, and all 5 merges are there. A
 duplication rate is a property of the source mix as much as of the matcher, which
 is why quoting one without the mix is close to meaningless.
 
@@ -173,18 +234,26 @@ tokens stripped from the name — whether the city belongs in the venue's name i
 formatting choice each source makes independently. Before that fix, one venue was
 three rows, three map pins and three cache entries.
 
-**57 of 72 Delft venues geocoded (79%)**, covering 221 of 284 events. PDOK first
+**68 of 73 Delft venues geocoded (93%)**, covering 206 of 232 events. PDOK first
 (Dutch national addresses, no key), Nominatim as fallback, three queries per venue
 from most specific to least. A second run makes **zero** network calls.
 
-The 15 failures are the honest part. Fourteen are TU Delft *room* names from one
-ICS feed — "Lecture hall Pi", "EEMCS-Hall F", "Hok". No geocoder can resolve a
-room, and it is right not to try. Rolling them up to the EEMCS building would
-lift the headline number and is deliberately not done: some of those events are
-genuinely off-campus, and that would trade a visible gap for an invisible error.
+Getting from 79% to 93% took three things, none of them a better geocoder.
+Venue names arrive carrying site decoration ("Café X | Delft", "X — Officiële
+site") which turns a resolvable query unresolvable, so it is stripped first.
+Names too generic to mean anything ("de kerk") are not queried at all rather
+than resolved to some church somewhere. And `sources/venue_overrides.yaml`
+carries 13 hand-written coordinates for TU Delft lecture halls — each mapped to
+the building it is in, with the building's position taken from PDOK rather than
+from memory. Ten hand-written points is a reasonable thing to own.
 
-The fifteenth is a real Amsterdam address in a Delft feed, correctly rejected by
-the bounding box. That check is not cosmetic — asked for "Bacchusstraat, Delft"
+The five remaining failures are rooms that cannot be attributed to a building
+with confidence. They stay unresolved on purpose: assigning every event from
+that feed a campus coordinate would cover the off-campus ones with an invisible
+error, and a visible gap is worth more.
+
+One earlier failure was a real Amsterdam address in a Delft feed, correctly
+rejected by the bounding box. That check is not cosmetic — asked for "Bacchusstraat, Delft"
 PDOK returns an address in **Almere**, and asked for "Bacchus" Nominatim returns a
 hamlet in **Tennessee**. Both are saved as test fixtures. Geocoders never say "I
 don't know", so the bounding box says it for them.
@@ -263,7 +332,7 @@ is worse than a slow answer.
 from one aggregator. `min_sources=2` returns only events that two independent
 sources listed — a corroboration guarantee, and possible only because dedup kept
 provenance instead of collapsing it. In Delft today it returns **4 events out of
-284**, which is an honest statement about how little Delft's sources overlap.
+232**, which is an honest statement about how little Delft's sources overlap.
 
 Cursor pagination is keyed on `(start, id)` rather than an offset, so an insert
 during pagination cannot make a client skip or repeat a row. Collections carry an
@@ -293,9 +362,11 @@ a reader in India — a plausible-looking, confidently wrong answer.
 
 - **Recall against the holdout is 0/15.** Free, recurring, café-scale events are a
   structural blind spot. Named, quantified, unfixed.
-- **1.4% duplication** reflects a source mix that barely overlaps, not a strong
+- **Five WARN-severity audit findings remain**, listed and explained in the
+  measurement section. None are ERROR; `cityfeed audit` exits 0.
+- **2.1% duplication** reflects a source mix that barely overlaps, not a strong
   matcher. Only 4 events have two sources.
-- **54 of 284 events are uncategorised.** The categoriser is keyword-based and
+- **53 of 232 events are uncategorised.** The categoriser is keyword-based and
   returns `None` rather than guessing.
 - **Four sources are disabled for client-side rendering**, including the municipal
   calendar. This is the single largest recoverable gap.
@@ -310,11 +381,11 @@ a reader in India — a plausible-looking, confidently wrong answer.
 
 ## Testing
 
-**80 tests, no network.** Every real-world failure became a saved payload plus a
+**132 tests, no network.** Every real-world failure became a saved payload plus a
 regression test: the ItemList descent, the news-feed pubDate, the WordPress CPT,
 the compact ACF date, the permalink date, the doorTime recovery, the EXDATE
-day/month swap, the bounding-box rejections, the geocode cache, cursor pagination
-and ETag 304s.
+day/month swap, the bounding-box rejections, the geocode cache, cursor pagination, ETag 304s, and 34 data-quality checks each with a deliberately
+corrupted record proving it fires.
 
 ```bash
 uv venv && uv pip install -e ".[dev,serve]"

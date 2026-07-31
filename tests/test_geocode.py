@@ -202,13 +202,16 @@ def test_a_failed_lookup_is_remembered_so_it_is_not_retried_forever(tmp_path):
         return httpx.Response(200, json={"response": {"docs": []}})
 
     conn = connect(str(tmp_path / "g.db"))
-    venues = [Venue(name="Lecture hall Pi", city="Delft")]
+    # A name with no override and no chance of resolving.
+    venues = [Venue(name="Vergaderhok Q7", city="Delft")]
 
-    _run(Geocoder(conn, providers=[PDOKProvider()], client=_client(handler)).resolve_all(venues, "Delft"))
+    _run(Geocoder(conn, providers=[PDOKProvider()], client=_client(handler),
+                  overrides_dir=None).resolve_all(venues, "Delft"))
     after_first = calls["n"]
     assert after_first > 0
 
-    second = Geocoder(conn, providers=[PDOKProvider()], client=_client(handler))
+    second = Geocoder(conn, providers=[PDOKProvider()], client=_client(handler),
+                      overrides_dir=None)
     assert _run(second.resolve_all(venues, "Delft")) == {venues[0].key: None}
     assert calls["n"] == after_first, "a known-unresolvable venue was retried"
 
@@ -261,3 +264,73 @@ def test_coordinates_reach_records_before_dedup(tmp_path):
     events = deduplicate(records, city="Delft", locale="nl")
     assert len(events) == 1
     assert events[0].venue.lat is not None
+
+
+# --------------------------------------------- name cleaning and overrides
+
+def test_venue_names_are_cleaned_before_querying():
+    """Site decoration turns a resolvable query into an unresolvable one."""
+    from cityfeed.geocode import clean_venue_name
+
+    assert clean_venue_name("Café Bacchus | Delft", "Delft") == "Café Bacchus"
+    assert clean_venue_name("Theater de Veste - Officiële site", "Delft") == "Theater de Veste"
+    assert clean_venue_name("Filmhuis Lumen (Delft)", "Delft") == "Filmhuis Lumen"
+    # A name with nothing to strip is returned untouched.
+    assert clean_venue_name("Jazzcafé Bebop", "Delft") == "Jazzcafé Bebop"
+    # Stripping must never empty the name.
+    assert clean_venue_name("Delft", "Delft") == "Delft"
+
+
+def test_generic_names_are_not_queried():
+    """'de kerk' resolves to a church somewhere. Spending a call on it is worse
+    than admitting we do not know which one."""
+    from cityfeed.geocode import is_generic_name, query_ladder
+
+    assert is_generic_name("de kerk")
+    assert is_generic_name("het centrum")
+    assert not is_generic_name("Oude Kerk Delft")
+    assert query_ladder("de kerk", None, "Delft") == []
+    # An address still gets tried even when the name is useless.
+    assert query_ladder("de kerk", "Markt 1", "Delft") == ["Markt 1, Delft"]
+
+
+def test_manual_override_wins_without_a_network_call(tmp_path):
+    """Ten hand-written points is a reasonable thing to own."""
+    from cityfeed.geocode import Geocoder
+
+    overrides = tmp_path / "reg"
+    overrides.mkdir()
+    (overrides / "venue_overrides.yaml").write_text(
+        "venues:\n  - name: Snijderszaal\n    lat: 51.99884\n    lon: 4.37366\n"
+    )
+
+    def handler(request):
+        raise AssertionError("an override must not reach the network")
+
+    conn = connect(str(tmp_path / "g.db"))
+    g = Geocoder(conn, providers=[PDOKProvider()], client=_client(handler),
+                 overrides_dir=str(overrides))
+    # Normalisation absorbs case and decoration, not a different spelling --
+    # which is why the real overrides file lists both spellings explicitly.
+    result = _run(g.resolve(Venue(name="SNIJDERSZAAL | Delft", city="Delft"), "Delft"))
+    assert result is not None
+    assert result.source == "override"
+    assert g.calls == 0
+
+
+def test_resolution_attempts_are_logged_for_diagnosis(tmp_path):
+    """An unresolved venue should be a diagnosis, not a shrug."""
+    from cityfeed.geocode import Geocoder
+
+    recorded = _responses()
+
+    def handler(request):
+        return httpx.Response(200, json=recorded["pdok_wrong_province"])
+
+    conn = connect(str(tmp_path / "g.db"))
+    g = Geocoder(conn, providers=[PDOKProvider()], client=_client(handler),
+                 overrides_dir=None)
+    assert _run(g.resolve(Venue(name="Bacchus", city="Delft"), "Delft")) is None
+
+    log = g.attempts["Bacchus"]
+    assert any("outside Delft" in line for line in log), log

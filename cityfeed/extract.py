@@ -14,8 +14,11 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
+from dataclasses import dataclass, field as dataclass_field
 from datetime import datetime, timedelta
 from typing import Any, Iterable, Optional
+from urllib.parse import urlparse
 
 from lxml import html as lxml_html
 
@@ -25,7 +28,28 @@ from .normalize import (
     detect_free,
     parse_datetime,
     parse_price,
+    strip_html,
 )
+
+
+@dataclass
+class ExtractContext:
+    """Side-channel for extraction: what the store knows, and what got dropped.
+
+    Kept out of SourceSpec because none of it is configuration -- it is state
+    the pipeline has accumulated (known venue names) and state extraction
+    produces (drop reasons). Optional everywhere, so tests and the probe can
+    call the extractors with nothing.
+    """
+
+    known_venues: set[str] = dataclass_field(default_factory=set)
+    drops: Counter = dataclass_field(default_factory=Counter)
+
+    def drop(self, source_id: str, reason: str) -> None:
+        self.drops[(source_id, reason)] += 1
+
+    def for_source(self, source_id: str) -> dict[str, int]:
+        return {r: n for (s, r), n in self.drops.items() if s == source_id}
 
 
 class ExtractionError(Exception):
@@ -190,7 +214,7 @@ def extract_jsonld(doc: str, spec: SourceSpec) -> list[RawRecord]:
                 continue
             seen.add(key)
             offers = _offers_blob(node)
-            description = clean_text(node.get("description"))
+            description = clean_text(strip_html(node.get("description")))
             records.append(
                 RawRecord(
                     source_id=spec.id,
@@ -227,7 +251,7 @@ def extract_ics(doc: str, spec: SourceSpec) -> list[RawRecord]:
 
     records: list[RawRecord] = []
     for component in cal.walk("VEVENT"):
-        title = clean_text(str(component.get("SUMMARY", "")))
+        title = clean_text(strip_html(str(component.get("SUMMARY", ""))))
         raw_start = component.get("DTSTART")
         if not title or raw_start is None:
             continue
@@ -235,8 +259,8 @@ def extract_ics(doc: str, spec: SourceSpec) -> list[RawRecord]:
         if start is None:
             continue
         raw_end = component.get("DTEND")
-        location = clean_text(str(component.get("LOCATION", "")) or "")
-        description = clean_text(str(component.get("DESCRIPTION", "")) or "")
+        location = clean_text(strip_html(str(component.get("LOCATION", "")) or ""))
+        description = clean_text(strip_html(str(component.get("DESCRIPTION", "")) or ""))
         rrule = component.get("RRULE")
         records.append(
             RawRecord(
@@ -264,7 +288,52 @@ _RSS_EVENT_DATE_KEYS = (
 )
 
 
-def extract_rss(doc: str, spec: SourceSpec) -> list[RawRecord]:
+# URL shapes that mean "this is a thing you attend" rather than "this is a
+# thing you read". The editorial set is checked first because a path can match
+# both (/nieuws/agenda-tips/).
+_EDITORIAL_PATH = re.compile(
+    r"/(news|nieuws|column|columns|article|artikel|opinie|blog|interview|podcast|video)(/|$)",
+    re.I,
+)
+_EVENT_PATH = re.compile(
+    r"/(events?|evenement(en)?|agenda|programma|voorstelling(en)?|activiteit(en)?"
+    r"|concert(en)?|kalender|calendar|show|tickets?)(/|$)",
+    re.I,
+)
+
+
+def _rss_event_signal(
+    record_url: str,
+    start: datetime,
+    blob: str,
+    known_venues: set[str],
+) -> Optional[str]:
+    """Does anything about this feed item say it is an event?
+
+    A feed is a list of *posts*. Some of those posts are events and most are
+    not, and the only thing they all share is a date -- which is why dating an
+    item is not enough to promote it. Requiring a second, independent signal is
+    what keeps a venue's blog from becoming twenty phantom events.
+
+    Returns the name of the signal that fired, or None to drop the item.
+    """
+    path = urlparse(record_url or "").path
+    if path and _EDITORIAL_PATH.search(path):
+        return None  # explicitly an article; no other signal rescues it
+    if path and _EVENT_PATH.search(path):
+        return "event_url"
+    if (start.hour, start.minute) != (0, 0):
+        return "clock_time"
+    lowered = blob.lower()
+    for venue in known_venues:
+        if len(venue) > 4 and venue in lowered:
+            return "known_venue"
+    return None
+
+
+def extract_rss(
+    doc: str, spec: SourceSpec, context: Optional["ExtractContext"] = None
+) -> list[RawRecord]:
     """Parse an RSS/Atom feed.
 
     The trap this function exists to avoid: `<pubDate>` is when the article was
@@ -292,13 +361,27 @@ def extract_rss(doc: str, spec: SourceSpec) -> list[RawRecord]:
         title = clean_text(entry.get("title"))
         if not title:
             continue
-        summary = clean_text(entry.get("summary"))
+        summary = clean_text(strip_html(entry.get("summary")))
         start = None
         for key in keys:
             start = parse_datetime(entry.get(key), spec.timezone)
             if start is not None:
                 break
         if start is None:
+            if context is not None:
+                context.drop(spec.id, "no parseable event date")
+            continue
+
+        url = clean_text(entry.get("link")) or spec.url
+        signal = _rss_event_signal(
+            url, start, f"{title} {summary or ''}",
+            context.known_venues if context else set(),
+        )
+        if signal is None:
+            # Dropped, and counted. A silent drop is indistinguishable from a
+            # source that simply had nothing this week.
+            if context is not None:
+                context.drop(spec.id, "no event signal (article-shaped)")
             continue
         records.append(
             RawRecord(
@@ -308,7 +391,7 @@ def extract_rss(doc: str, spec: SourceSpec) -> list[RawRecord]:
                 title=title,
                 start=start,
                 description=summary,
-                url=clean_text(entry.get("link")) or spec.url,
+                url=url,
                 is_free=detect_free(summary, title, locale=spec.locale),
             )
         )
@@ -630,14 +713,29 @@ def _apply_venue_default(record: RawRecord, spec: SourceSpec) -> None:
         record.description = f"{room}. {record.description}" if record.description else room
 
 
-def extract(doc: str, spec: SourceSpec, fetched_at: Optional[datetime] = None) -> list[RawRecord]:
+def extract(
+    doc: str,
+    spec: SourceSpec,
+    fetched_at: Optional[datetime] = None,
+    context: Optional[ExtractContext] = None,
+) -> list[RawRecord]:
     """Route a payload to its extractor and stamp the fetch time."""
     handler = _DISPATCH.get(spec.type.value)
     if handler is None:
         raise ExtractionError(f"{spec.id}: no extractor for type {spec.type.value}")
-    records = handler(doc, spec)
+    # Only the RSS path currently needs the context; passing it selectively
+    # keeps the other extractors' signatures honest about what they use.
+    if handler is extract_rss:
+        records = handler(doc, spec, context)
+    else:
+        records = handler(doc, spec)
     for record in records:
         _apply_venue_default(record, spec)
         if fetched_at is not None:
             record.fetched_at = fetched_at
+
+    if spec.collapse_repeats:
+        from .occurrence import collapse_repeats as _collapse
+
+        records = _collapse(records, spec)
     return records

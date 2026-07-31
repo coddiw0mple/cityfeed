@@ -130,6 +130,72 @@ def test_wordpress_news_feed_yields_no_events(specs):
     assert extract(payload("wordpress_news_feed"), spec) == []
 
 
+def _feed(items: str) -> str:
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel>'
+        "<title>Test feed</title>" + items + "</channel></rss>"
+    )
+
+
+def _item(title, link, pubdate):
+    return (
+        f"<item><title>{title}</title><link>{link}</link>"
+        f"<description>iets</description><pubDate>{pubdate}</pubDate></item>"
+    )
+
+
+def test_rss_items_need_a_second_signal_before_becoming_events(specs):
+    """A feed is a list of posts. Dating one does not make it an event.
+
+    Every Delft venue runs a blog whose feed advertises twenty items. Requiring
+    an independent signal -- an event-shaped URL, a real clock time, or a venue
+    the store already knows -- is what stops that blog becoming twenty events.
+    """
+    from cityfeed.extract import ExtractContext
+    from cityfeed.models import SourceType
+
+    spec = specs["delft_op_zondag_rss"].model_copy(
+        update={"type": SourceType.RSS, "date_from": "published"}
+    )
+    ctx = ExtractContext(known_venues={"café de wijnhaven"})
+
+    doc = _feed(
+        # article path: dropped even though it has a clock time
+        _item("Raad stemt in", "https://x.test/nieuws/raad", "Mon, 07 Sep 2026 09:12:00 +0200")
+        # event path: kept even though the time is midnight
+        + _item("Jazzavond", "https://x.test/agenda/jazz", "Sat, 12 Sep 2026 00:00:00 +0200")
+        # no path signal, but a real clock time
+        + _item("Pubquiz", "https://x.test/p/123", "Sat, 12 Sep 2026 20:30:00 +0200")
+        # no path signal, midnight, but names a venue the store knows
+        + _item("Optreden in Café de Wijnhaven", "https://x.test/p/9",
+                "Sun, 13 Sep 2026 00:00:00 +0200")
+        # nothing at all: dropped
+        + _item("Iets leuks", "https://x.test/p/7", "Mon, 14 Sep 2026 00:00:00 +0200")
+    )
+    titles = {r.title for r in extract(doc, spec, context=ctx)}
+    assert titles == {"Jazzavond", "Pubquiz", "Optreden in Café de Wijnhaven"}
+
+    # Drops are counted with a reason, never silent: a silent drop is
+    # indistinguishable from a source that simply had nothing this week.
+    drops = ctx.for_source(spec.id)
+    assert drops == {"no event signal (article-shaped)": 2}
+
+
+def test_rss_drop_accounting_is_per_source(specs):
+    from cityfeed.extract import ExtractContext
+    from cityfeed.models import SourceType
+
+    ctx = ExtractContext()
+    doc = _feed(_item("Column", "https://x.test/column/a", "Mon, 07 Sep 2026 09:00:00 +0200"))
+    for source_id in ("feed_a", "feed_b"):
+        spec = specs["delft_op_zondag_rss"].model_copy(
+            update={"id": source_id, "type": SourceType.RSS, "date_from": "published"}
+        )
+        assert extract(doc, spec, context=ctx) == []
+    assert ctx.for_source("feed_a") == {"no event signal (article-shaped)": 1}
+    assert ctx.for_source("feed_b") == {"no event signal (article-shaped)": 1}
+
+
 # ----------------------------------------------------- real-world regressions
 
 def test_jsonld_events_nested_in_an_itemlist_are_found(specs):
@@ -523,3 +589,183 @@ def test_pipeline_assigns_categories(synthetic):
     by_title = {e.title: e.category for e in events}
     assert by_title["Jazzavond in de Wijnhaven"] == "music"
     assert by_title["TU Delft Open Day"] == "academic"
+
+
+# ---------------------------------------------------------------- encoding
+
+def test_mis_encoded_page_is_decoded_correctly_at_fetch_time(specs):
+    """UTF-8 bytes with a server claiming iso-8859-1 — the Dutch venue classic.
+
+    Nothing raises on the wrong decode: 'Café' becomes 'CafÃ©', parses fine,
+    stores fine, and is wrong on every screen it reaches. It has to be caught
+    where the bytes still exist, because after a bad decode the information
+    needed to do it right is gone.
+    """
+    from cityfeed.fetch import decode_payload
+
+    raw = (FIXTURES / "mis_encoded_venue_page.html.utf8bytes").read_bytes()
+
+    # The naive read, which is what a mislabelled response gives you.
+    assert "CafÃ©" in raw.decode("latin-1")
+
+    text = decode_payload(raw, "text/html; charset=iso-8859-1")
+    assert "Café de Wijnhaven" in text
+    assert "CafÃ©" not in text
+    assert "septémber" in text
+
+    records = extract(text, specs["indelft_uitagenda"])
+    assert len(records) == 1
+    assert records[0].title == "Jazzavond in Café de Wijnhaven"
+    assert records[0].venue.name == "Café de Wijnhaven"
+    assert records[0].is_free is True
+
+
+def test_decode_prefers_a_correct_read_over_a_merely_successful_one():
+    """latin-1 never raises, so 'it decoded' is not evidence it decoded right."""
+    from cityfeed.fetch import decode_payload
+
+    utf8 = "Café".encode("utf-8")
+    assert decode_payload(utf8, "text/html; charset=iso-8859-1") == "Café"
+    # A genuine cp1252 page must still come back intact.
+    assert decode_payload("Café".encode("cp1252"), "text/html; charset=windows-1252") == "Café"
+
+
+def test_decode_normalises_to_nfc():
+    """Two spellings of one venue must compare equal."""
+    from cityfeed.fetch import decode_payload
+
+    decomposed = "Café".encode("utf-8")   # e + combining acute
+    assert decode_payload(decomposed, "") == "Café"
+
+
+# ------------------------------------------------------- repeat collapsing
+
+def test_repeated_screenings_collapse_into_one_series(specs):
+    """A cinema publishes one row per showing; a reader means one film.
+
+    100 rows from one cinema was 40% of the whole corpus and distorted every
+    rate computed over it. Collapsing keeps every showing as a date while
+    making the event count mean what a person means by it.
+    """
+    from cityfeed.occurrence import collapse_repeats, expand_rrule
+
+    spec = specs["filmhuis_lumen_shows"]
+    assert spec.collapse_repeats is True, "registry must opt this source in"
+
+    start = datetime(2026, 9, 12, 14, 0, tzinfo=AMS)
+    showings = [
+        RawRecord(source_id="cinema", source_url="u", trust=TrustTier.VENUE,
+                  title="The Odyssey", start=start + timedelta(hours=h),
+                  venue=Venue(name="Filmhuis Lumen", city="Delft"))
+        for h in (0, 3, 6)
+    ]
+    other = RawRecord(source_id="cinema", source_url="u", trust=TrustTier.VENUE,
+                      title="Blow-Up", start=start,
+                      venue=Venue(name="Filmhuis Lumen", city="Delft"))
+
+    collapsed = collapse_repeats(showings + [other], spec)
+    assert len(collapsed) == 2, "three showings of one film are one film"
+
+    odyssey = next(r for r in collapsed if r.title == "The Odyssey")
+    assert odyssey.start == start, "the series keeps the earliest showing"
+
+    # Every showing survives as a date -- collapsing must not lose any.
+    dates = expand_rrule(odyssey.start, odyssey.rrule, horizon_days=90, now=start)
+    assert sorted(dates) == sorted(r.start for r in showings)
+
+
+def test_collapsing_is_opt_in_per_source(specs):
+    """Two performances of one play in a day are two things you can book."""
+    from cityfeed.occurrence import collapse_repeats
+
+    theatre = specs["theaterdeveste_programma"]
+    assert theatre.collapse_repeats is False
+
+    start = datetime(2026, 9, 12, 14, 0, tzinfo=AMS)
+    matinee_and_evening = [
+        RawRecord(source_id="theatre", source_url="u", trust=TrustTier.VENUE,
+                  title="Hamlet", start=start + timedelta(hours=h),
+                  venue=Venue(name="Theater de Veste", city="Delft"))
+        for h in (0, 6)
+    ]
+    assert len(collapse_repeats(matinee_and_evening, theatre)) == 2
+
+
+def test_same_title_at_different_venues_does_not_collapse(specs):
+    """One film at two cinemas is two programmes a reader chooses between."""
+    from cityfeed.occurrence import collapse_repeats
+
+    start = datetime(2026, 9, 12, 20, tzinfo=AMS)
+    records = [
+        RawRecord(source_id="c", source_url="u", trust=TrustTier.VENUE,
+                  title="The Odyssey", start=start, venue=Venue(name=v, city="Delft"))
+        for v in ("Filmhuis Lumen", "Pathé Delft")
+    ]
+    assert len(collapse_repeats(records, specs["filmhuis_lumen_shows"])) == 2
+
+
+def test_html_is_stripped_from_free_text_fields(specs):
+    """ICS DESCRIPTION routinely carries markup, and it renders literally.
+
+    Found by `cityfeed audit` only after descriptions began being persisted:
+    115 of 233 events carried raw <br> and <a href> in their description. It
+    crashed nothing and was visible on every card.
+    """
+    from cityfeed.normalize import strip_html
+
+    assert strip_html("A<br><br>Category: Social.<br><a href='x'>View</a>") == \
+        "A Category: Social. View"
+    assert strip_html("Jazz &amp; Blues") == "Jazz & Blues"
+    # Plain text must come back byte-identical, not merely equivalent.
+    assert strip_html("plain text, untouched") == "plain text, untouched"
+    assert strip_html(None) is None
+    # Block tags become spaces so words do not fuse together.
+    assert "onetwo" not in strip_html("one<br>two")
+
+
+def test_ics_descriptions_arrive_without_markup(specs):
+    doc = payload("speakers_delft_ics").replace(
+        "DESCRIPTION:", "DESCRIPTION:Live jazz<br><a href=\"http://x\">tickets</a> "
+    )
+    records = extract(doc, specs["speakers_delft_ics"])
+    assert records
+    assert "<" not in (records[0].description or "")
+
+
+def test_a_date_only_listing_still_merges_with_a_timed_one():
+    """Midnight means "no time published", not "starts at 00:00".
+
+    popdelft lists a festival as "wo 19 augustus 2026" with no clock time.
+    Read literally that is 19 hours from the same festival at the theatre, far
+    enough to veto every merge, and the user sees it twice. Scoring an unknown
+    time as neutral is the same treatment a missing venue already gets.
+    """
+    from cityfeed.dedup import time_similarity
+
+    day = datetime(2026, 8, 22, tzinfo=AMS)
+    assert time_similarity(day, day.replace(hour=19)) == 0.5
+    # Different days still score zero: unknown time is not unknown date.
+    assert time_similarity(day, day.replace(day=23, hour=19)) == 0.0
+    # Two real times are unaffected by the rule.
+    assert time_similarity(day.replace(hour=20), day.replace(hour=20)) == 1.0
+    assert time_similarity(day.replace(hour=20), day.replace(hour=23)) == 0.0
+
+    records = [
+        RawRecord(source_id="popdelft", source_url="u", trust=TrustTier.VENUE,
+                  title="Delft Jazz", start=day),
+        RawRecord(source_id="veste", source_url="u", trust=TrustTier.VENUE,
+                  title="Delft Jazz", start=day.replace(hour=19)),
+    ]
+    assert len(deduplicate(records, city="Delft", locale="nl")) == 1
+
+
+def test_neutral_time_cannot_carry_a_merge_on_its_own():
+    """The unknown-time score must not become a licence to merge anything."""
+    day = datetime(2026, 8, 22, tzinfo=AMS)
+    records = [
+        RawRecord(source_id="a", source_url="u", trust=TrustTier.VENUE,
+                  title="Kinderworkshop pottenbakken", start=day),
+        RawRecord(source_id="b", source_url="u", trust=TrustTier.VENUE,
+                  title="Death metal avond", start=day.replace(hour=21)),
+    ]
+    assert len(deduplicate(records, city="Delft", locale="nl")) == 2

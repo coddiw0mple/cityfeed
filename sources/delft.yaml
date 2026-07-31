@@ -77,6 +77,11 @@ sources:
     # the UI; with it the categoriser also recognises a screening at a filmhuis.
     venue_name: Filmhuis Lumen
     venue_address: Doelenplein 5, 2611 BP Delft
+    # One row per screening: the same film five times a day. Collapsed into one
+    # series per title with every showing kept as an occurrence, because a
+    # reader means one film, and 100 rows from one cinema swamped 40% of the
+    # corpus and every rate computed over it.
+    collapse_repeats: true
     selectors:
       title: title.rendered
       date: acf.dag
@@ -108,7 +113,11 @@ sources:
       # clock time is in the same card, so the two are joined.
       start: "@href"
       start_regex: "/date/\\d+/(\\d{4}-\\d{2}-\\d{2})/"
-      start_time: .event-summary__date span
+      # Selects the whole date block rather than the inner span: cards without
+      # a time span were falling back to midnight, and a midnight start is far
+      # enough from the real one that the event never matched the same show
+      # from another source. That was the pipeline's only missed merge.
+      start_time: .event-summary__date
       start_time_regex: "(\\d{1,2}:\\d{2})"
       description: .event-summary__description
     notes: |

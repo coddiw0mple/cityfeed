@@ -368,6 +368,8 @@ fiddly one and can ship separately.
 | 7 | B5 API | 40m |
 | 8 | B6 dashboard wiring | 30m |
 | 9 | B7 write-up | 1–2h |
+| 10 | B8 data quality audit | 2–3h |
+| 11 | B9 fix what it surfaces | 2–4h |
 
 **~9–12 hours.** A weekend, if the live sources cooperate. B2 is the only task
 with real variance — it's the one where reality pushes back.
@@ -381,3 +383,136 @@ with real variance — it's the one where reality pushes back.
 - **Never report an accuracy number without its denominator.**
 - **Holdouts stay held out.** The moment one leaks into the registry, the recall
   number becomes self-graded and worthless.
+
+---
+
+## B8 — data quality audit
+
+Build `cityfeed/audit.py` and a `cityfeed audit --city Delft` command that runs
+automated checks over the canonical events currently in the database and reports
+findings grouped by severity (ERROR / WARN / INFO), each with a count, a short
+explanation, and up to 5 example records.
+
+Checks to implement:
+
+NON-EVENTS
+- records from RSS/editorial sources with no event signal: no time component
+  (midnight exactly), no venue, and a URL path that looks editorial
+  (/news/, /column/, /article/, /nieuws/, /opinie/)
+- titles matching editorial patterns: starts with "Column", "Opinie",
+  "Interview", "Video", "Podcast", "Update", "Reactie", ends with "?"
+- description length >1500 chars with no venue (long-form article shape)
+
+TEMPORAL
+- start time in the past relative to now
+- start time more than 15 months in the future
+- start hour between 02:00 and 06:00 local (usually a parse failure)
+- exact-midnight start times, counted per source: a source where >60% of events
+  start at 00:00 is almost certainly losing the time component
+- end before start
+- duration >14 hours
+- suspiciously round date clustering: many events on the 1st of a month often
+  means a date defaulted
+
+TEXT QUALITY
+- mojibake: presence of "Ã", "â€", "Â", "Ã©", "ï¿½" — encoding failures are
+  extremely common on Dutch venue sites and will not crash anything
+- unescaped HTML entities (&amp;, &#39;, &nbsp;) surviving into the title
+- raw HTML tags in title or description
+- titles that are ALL CAPS, or shorter than 4 chars, or longer than 180
+- titles ending mid-word or with "..." / "…" (truncation)
+- titles that are only a date or only a venue name
+- duplicate whitespace or leading/trailing punctuation
+
+VENUE
+- ungeocoded rate overall AND per source — report both, the per-source split is
+  what tells you whether it's a geocoder problem or a source problem
+- venue name equal to the city name, or containing a URL, or empty
+- venue coordinates outside the Delft bounding box (lat 51.97–52.04,
+  lon 4.32–4.40)
+- multiple distinct venue records whose normalised names are >90% similar —
+  these should have been resolved to one venue entity
+
+DEDUP HEALTH
+- MISSED MERGES: pairs of canonical events on the same day with title similarity
+  >0.85 that did NOT merge. This measures dedup recall and is the single most
+  useful check here. List them.
+- OVER-MERGES: clusters whose members disagree by >3 hours on start time, or
+  whose member titles have pairwise similarity <0.5
+- clusters containing two records from the same source (should be impossible
+  given pair_score returns 0 for same-source, so any hit is a real bug)
+
+VOLUME AND DISTRIBUTION
+- any single source contributing >40% of all events (the cinema problem —
+  a venue with multiple daily screenings will swamp everything)
+- same normalised title appearing >8 times in the window (recurring series that
+  was never collapsed into a series + occurrences)
+- events per source per day, flagging sources that produced zero records
+- category distribution, with % uncategorised
+- is_free distribution, with % unknown
+
+CONSISTENCY
+- is_free is true but a price is also set
+- duplicate canonical ids
+- events referencing a venue_id that doesn't exist
+
+Output a summary table plus the detail sections. Add `--json` for machine
+output. Exit non-zero if any ERROR-severity check fires, so it can gate a run.
+
+Write tests using deliberately corrupted fixture records — one per check.
+
+**Acceptance:** `cityfeed audit --city Delft` runs against live data and produces
+a findings report. Every check has a test proving it fires when it should.
+
+## B9 — fix what the audit surfaces
+
+Run the audit first, then fix in this order:
+
+1. NON-EVENTS FROM RSS
+   RSS/editorial sources currently promote any dated item to an event. Require a
+   second signal before an RSS item becomes a RawRecord: an event-shaped URL
+   path, OR a time component that isn't midnight, OR a venue mention matching a
+   known venue name from the venues table. Items failing this are dropped with a
+   counted reason, not silently. Report drop counts per source in the run output.
+   If a source drops >70% of items, it probably isn't an event feed — disable it
+   and note why in the registry.
+
+2. ENCODING
+   Detect and fix mojibake at fetch time, not extraction time. Respect the HTTP
+   Content-Type charset, fall back to the meta charset in the HTML, then to
+   chardet-style detection. Normalise to NFC. Add a fixture with a real
+   mis-encoded page as a regression test.
+
+3. HIGH-VOLUME SOURCES (cinema)
+   A cinema with several screenings a day distorts everything. Collapse repeated
+   screenings of the same title at the same venue into one series with
+   occurrences, using the existing series/occurrence model. Add a
+   `collapse_repeats: true` flag on SourceSpec so this is opt-in per source
+   rather than global.
+
+4. GEOCODING GAP
+   For each ungeocoded venue, log which query variants were tried and what came
+   back. Common failures: venue names carrying suffixes ("Café X | Delft",
+   "X - Officiële site"), names that are generic ("de kerk", "het centrum"),
+   and addresses embedded in the name. Strip known suffix patterns before
+   querying, and add a manual override table in the registry for the stubborn
+   ones — a hand-written lat/lon for 10 venues is fine and honest.
+
+5. MISSED MERGES
+   Review what the dedup-recall check found. If there's a systematic pattern
+   (e.g. same event listed at 19:30 and 20:00 consistently), consider widening
+   the time tolerance in time_similarity() — but change one parameter at a time
+   and re-run the audit to confirm it didn't create over-merges. Do not tune
+   blindly.
+
+6. DASHBOARD COPY
+   The page still reads "Delft & Madrid" and carries placeholder text about
+   opening the file locally. Update the tagline and the tile-fallback message to
+   match reality. If Madrid isn't loaded, remove the city selector or disable
+   the Madrid option.
+
+After fixing, re-run the audit and put the before/after counts in the README.
+The delta is the interesting part.
+
+**Acceptance:** audit re-run shows zero ERROR-severity findings, or each
+remaining one is documented in the README's known-limits section with a reason.

@@ -1,0 +1,74 @@
+# Hand-written coordinates for venues no geocoder can resolve.
+#
+# Every entry here is a *room*, not a venue. The TU Delft association calendar
+# publishes its LOCATION as a lecture hall — "Snijderszaal", "EEMCS-Hall F",
+# "Lecture hall Pi" — and no address geocoder will ever resolve those, correctly:
+# they are not addresses.
+#
+# What makes this honest rather than a fudge: each room is mapped to the
+# building it is actually in, and the building's coordinates came from PDOK
+# rather than from memory. A reader sent to Mekelweg 4 for a lecture in
+# Snijderszaal is in the right place.
+#
+# What is deliberately NOT done here: assigning every event from that feed to a
+# campus coordinate. Some of its activities are off-campus, and inventing a
+# location for those would trade a visible gap for an invisible error. Rooms
+# that cannot be attributed to a building with confidence are left unresolved
+# and keep showing up in `cityfeed venues` as work still to do.
+#
+# Matching is on the normalised name, which absorbs case, accents and
+# punctuation but not genuinely different spellings. "Snijderzaal" and
+# "Snijderszaal" are different keys and both are listed below, deliberately:
+# fuzzy-matching an override would let a hand-written coordinate attach itself
+# to a venue nobody checked.
+venues:
+
+  # --- EEMCS / Building 36, Mekelweg 4 -------------------------------------
+  - name: Snijderszaal
+    lat: 51.99884
+    lon: 4.37366
+    note: EEMCS building, Mekelweg 4
+  - name: Snijderzaal
+    lat: 51.99884
+    lon: 4.37366
+    note: same room, spelt without the s by one source
+  - name: EEMCS-Hall F
+    lat: 51.99884
+    lon: 4.37366
+  - name: EWI Hall F
+    lat: 51.99884
+    lon: 4.37366
+    note: EWI is the Dutch name for the EEMCS faculty
+  - name: EEMCS Hall K
+    lat: 51.99884
+    lon: 4.37366
+  - name: Lecture hall Ampere
+    lat: 51.99884
+    lon: 4.37366
+  - name: Lecture hall Chip
+    lat: 51.99884
+    lon: 4.37366
+  - name: Lecture Hall G
+    lat: 51.99884
+    lon: 4.37366
+
+  # --- Aula Congrescentrum / Building 20, Mekelweg 5 -----------------------
+  - name: Lecture hall Pi
+    lat: 52.00211
+    lon: 4.37322
+    note: Aula, Mekelweg 5
+  - name: Hall Pi
+    lat: 52.00211
+    lon: 4.37322
+  - name: Lecture halls L, K & M
+    lat: 52.00211
+    lon: 4.37322
+
+  # --- Echo / Building 32, Mekelweg 8 --------------------------------------
+  - name: Echo Hall C & D
+    lat: 51.99555
+    lon: 4.37641
+    note: Echo teaching building, Mekelweg 8
+  - name: Echo-Student Team Room
+    lat: 51.99555
+    lon: 4.37641

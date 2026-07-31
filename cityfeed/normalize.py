@@ -43,6 +43,34 @@ def clean_text(value: Optional[str]) -> Optional[str]:
     return value or None
 
 
+_BLOCK_TAG = re.compile(r"<\s*/?\s*(br|p|div|li|tr|h[1-6])\b[^>]*>", re.I)
+_ANY_TAG = re.compile(r"<[^>]+>")
+
+
+def strip_html(value: Optional[str]) -> Optional[str]:
+    """Remove markup from a free-text field and unescape its entities.
+
+    Needed because "free text" in a feed frequently is not: an ICS DESCRIPTION
+    routinely carries `<br>` and `<a href>`, and schema.org descriptions carry
+    whole paragraphs of markup. None of it crashes anything — it renders
+    literally in the UI as `<br>` and reaches the user as garbage.
+
+    Block-level tags become spaces rather than vanishing, so "line one<br>line
+    two" does not become "line oneline two".
+    """
+    import html as html_module
+
+    if value is None:
+        return None
+    if "<" not in value and "&" not in value:
+        return value  # the overwhelmingly common case, untouched
+    text = _BLOCK_TAG.sub(" ", value)
+    text = _ANY_TAG.sub("", text)
+    # After tags, entities: "&amp;" must not survive as literal text.
+    text = html_module.unescape(text)
+    return _WS.sub(" ", text).strip()
+
+
 def normalize_title(title: str, locale: str = "nl") -> str:
     """Aggressive normalisation used only for comparison, never for display.
 

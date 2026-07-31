@@ -100,7 +100,24 @@ def time_similarity(a, b, tolerance_minutes: int = 90) -> float:
     Listings routinely disagree on whether an event starts at doors-open or
     at showtime, so a small disagreement should not veto a merge — but a
     four-hour gap on the same evening usually means two different events.
+
+    Exact midnight is treated as "time unknown" rather than "starts at 00:00",
+    and scores neutral against any other time on the same day. Plenty of sources
+    publish a date with no clock time — a festival listing reading "wo 19
+    augustus 2026" and nothing more — and taking that literally puts the event
+    19 hours from the same event elsewhere, which is far enough to veto every
+    merge. This mirrors how venue_similarity already treats a missing venue:
+    absence of evidence is not evidence against.
+
+    The neutral value cannot carry a merge on its own. At weight 0.35 it
+    contributes 0.175 of the 0.72 threshold, so title and venue still have to
+    agree strongly for the pair to merge.
     """
+    a_unknown = (a.hour, a.minute, a.second) == (0, 0, 0)
+    b_unknown = (b.hour, b.minute, b.second) == (0, 0, 0)
+    if a_unknown != b_unknown:
+        return 0.5 if a.date() == b.date() else 0.0
+
     delta = abs((a - b).total_seconds()) / 60.0
     if delta > tolerance_minutes:
         return 0.0

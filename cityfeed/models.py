@@ -91,6 +91,13 @@ class SourceSpec(BaseModel):
     # categorisation (a screening at a *filmhuis* is a film) in one line.
     venue_name: Optional[str] = None
     venue_address: Optional[str] = None
+    # For sources that publish one row per showing rather than one per title.
+    # A cinema with five screenings a day produces five "events" that are the
+    # same film, and they swamp every rate computed over the corpus. Opt-in per
+    # source rather than global, because for a theatre two performances of one
+    # play on one day are genuinely two things you can buy a ticket to, and
+    # collapsing them there would lose information.
+    collapse_repeats: bool = False
     # RSS only. A feed's <pubDate> is when the article was published, not when
     # the event happens, and treating the two as one silently fills the database
     # with confidently-wrong start times. Set to "published" only for a feed
