@@ -1,4 +1,5 @@
 {
+  "framework": null,
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "python3 scripts/build_dashboard.py --db data/cityfeed.db --city Delft --out public --api ''",
   "outputDirectory": "public",
