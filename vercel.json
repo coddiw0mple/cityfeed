@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "python3 scripts/build_dashboard.py --db data/cityfeed.db --city Delft --out public",
+  "buildCommand": "python3 scripts/build_dashboard.py --db data/cityfeed.db --city Delft --out public --api ''",
   "outputDirectory": "public",
   "functions": {
     "api/index.py": {
@@ -9,16 +9,31 @@
     }
   },
   "rewrites": [
-    { "source": "/v1/:path*", "destination": "/api/index" },
-    { "source": "/docs", "destination": "/api/index" },
-    { "source": "/openapi.json", "destination": "/api/index" }
+    {
+      "source": "/v1/:path*",
+      "destination": "/api/index?__vpath=/v1/:path*"
+    },
+    {
+      "source": "/docs",
+      "destination": "/api/index?__vpath=/docs"
+    },
+    {
+      "source": "/openapi.json",
+      "destination": "/api/index?__vpath=/openapi.json"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
       ]
     }
   ]

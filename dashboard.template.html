@@ -259,9 +259,14 @@ input[type=range]{width:100%;accent-color:var(--signal)}
  * works" is worth more than the small amount of duplication it costs.
  */
 const INLINE_EVENTS = __DATA__;
-const API = (typeof window !== "undefined" && window.CITYFEED_API) || null;
+/* An empty string is a legitimate value: it means "same origin as this page",
+   which is how the deployed build talks to its own /v1. So presence is tested
+   with != null rather than truthiness, and a separate flag carries the mode. */
+const API = (typeof window !== "undefined" && window.CITYFEED_API != null)
+  ? window.CITYFEED_API : null;
+const USE_API = API !== null;
 const API_KEY = (typeof window !== "undefined" && window.CITYFEED_API_KEY) || null;
-let EVENTS = API ? [] : INLINE_EVENTS;
+let EVENTS = USE_API ? [] : INLINE_EVENTS;
 
 const CAT_COLOR = {
   music:"#1B4D8F", nightlife:"#6E3B9C", theatre:"#A63328", art:"#B57518",
@@ -406,7 +411,7 @@ async function loadFromApi(){
 function showApiError(err){
   const list = document.getElementById("list");
   if(list) list.innerHTML =
-    `<div class="empty">Could not reach the API at ${API}.<br>${err.message}` +
+    `<div class="empty">Could not reach the API at ${API || location.origin}.<br>${err.message}` +
     `<br><br>Unset window.CITYFEED_API to fall back to the built-in data.</div>`;
 }
 
@@ -415,7 +420,7 @@ function visible(){
   /* In API mode the server has already applied city/category/free/corroboration
      and the date window; only the controls that cannot be expressed as a single
      query parameter are re-applied here. */
-  if(API){
+  if(USE_API){
     return EVENTS.filter(e => {
       if(state.cats.size && !state.cats.has(catOf(e))) return false;
       if(state.geoOnly && e.venue.lat == null) return false;
@@ -602,7 +607,7 @@ function select(id, pan){
 /* Filter changes that the server can act on trigger a refetch; the ones it
    cannot (geo-only, selection) are pure re-renders. */
 function refresh(){
-  if(API) loadFromApi(); else render();
+  if(USE_API) loadFromApi(); else render();
 }
 
 function render(){
@@ -648,7 +653,7 @@ document.getElementById("togglefilters").onclick = ev => {
 document.addEventListener("keydown", e => { if(e.key === "Escape" && state.selected){ state.selected=null; render(); } });
 
 /* Inline mode renders immediately; API mode paints the shell, then fills it. */
-if(API){ renderCats(); render(); loadFromApi(); } else { render(); }
+if(USE_API){ renderCats(); render(); loadFromApi(); } else { render(); }
 </script>
 </body>
 </html>

@@ -63,7 +63,7 @@ def render(template: str, events: list[dict], start: datetime, api: str | None) 
         'const START = new Date("2026-09-07T00:00:00+02:00");',
         f'const START = new Date("{start.isoformat()}");',
     )
-    if api:
+    if api is not None:
         html = html.replace(
             "<script>\n/* Two data modes.",
             f'<script>window.CITYFEED_API={json.dumps(api)};</script>\n<script>\n/* Two data modes.',
@@ -76,7 +76,14 @@ def main() -> int:
     parser.add_argument("--db", default=str(ROOT / "data" / "cityfeed.db"))
     parser.add_argument("--city", default="Delft")
     parser.add_argument("--out", default=str(ROOT / "public"))
-    parser.add_argument("--api", help="also emit live.html pointed at this API origin")
+    parser.add_argument(
+        "--api",
+        help=(
+            "also emit live.html in runtime mode against this API origin. "
+            "Pass an empty string for same-origin, which is what the deployed "
+            "build uses -- so this is tested for presence, not truthiness."
+        ),
+    )
     args = parser.parse_args()
 
     db = Path(args.db)
@@ -95,7 +102,7 @@ def main() -> int:
     (out / "index.html").write_text(render(template, events, start, None))
     print(f"wrote {out / 'index.html'}  ({len(events)} events inlined)")
 
-    if args.api:
+    if args.api is not None:
         # Empty inline data on purpose: if the fetch is broken, the page is
         # visibly empty rather than quietly serving a stale bake.
         (out / "live.html").write_text(render(template, [], start, args.api))

@@ -5,6 +5,10 @@ raw listings, 284 canonical events, 72 venues (57 geocoded), zero model calls in
 the pipeline.** Every number in this file came from running the thing against
 the real web on 2026-07-31. Where a number is bad, it is written down as it is.
 
+**Live:** [cityfeed.vercel.app](https://cityfeed.vercel.app) ·
+[/live.html](https://cityfeed.vercel.app/live.html) (same page, served from the API) ·
+[/docs](https://cityfeed.vercel.app/docs)
+
 ```bash
 cityfeed probe --file urls_delft.txt   # what tier is this URL?
 cityfeed run --city Delft              # fetch, extract, geocode, dedup, store
@@ -299,7 +303,8 @@ a reader in India — a plausible-looking, confidently wrong answer.
   certificate verification to gain one source is a bad trade.
 - **Eventbrite returns HTTP 405** to programmatic requests. That is bot protection
   and is not worked around.
-- **No scheduler, no Docker, no deployment.** Out of scope for v1, deliberately.
+- **No Docker.** Out of scope for v1, deliberately. Deployment is a static build
+  plus one read-only serverless function; crawling runs in CI, not on the host.
 - **Delft only.** `sources/madrid.yaml` exists as the worked example for the
   onboarding doc and has never been crawled.
 
@@ -312,6 +317,19 @@ day/month swap, the bounding-box rejections, the geocode cache, cursor paginatio
 and ETag 304s.
 
 ```bash
-uv venv && uv pip install -e ".[dev,api]"
+uv venv && uv pip install -e ".[dev,serve]"
 pytest -q
 ```
+
+## Deployment
+
+The dashboard is a static file and the API is read-only, so the whole thing is a
+static build plus one serverless function with the 316K SQLite bundled beside it.
+No hosted database: at this size there is nothing to host.
+
+Crawling cannot run there — a serverless function has a read-only filesystem and
+seconds of budget, while a polite crawl takes minutes by design. So CI does the
+writing and the host only ever reads: `.github/workflows/crawl.yml` runs the
+crawl twice a day, commits the refreshed database, and the push triggers a
+redeploy. `POST /v1/admin/refresh` answers 501 there rather than hanging, and
+says why.
