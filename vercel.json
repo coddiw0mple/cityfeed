@@ -1,0 +1,25 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "python3 scripts/build_dashboard.py --db data/cityfeed.db --city Delft --out public",
+  "outputDirectory": "public",
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "{data/cityfeed.db,sources/**,cityfeed/**}",
+      "maxDuration": 15
+    }
+  },
+  "rewrites": [
+    { "source": "/v1/:path*", "destination": "/api/index" },
+    { "source": "/docs", "destination": "/api/index" },
+    { "source": "/openapi.json", "destination": "/api/index" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}

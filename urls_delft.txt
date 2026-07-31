@@ -1,0 +1,80 @@
+# Delft source candidates (task A1).
+#
+# Deliberately over-inclusive and full of guessed paths. Sorting the real from
+# the dead is `cityfeed probe`'s job, not a human's:
+#     cityfeed probe --file urls_delft.txt --out /tmp/probed.yaml
+#
+# Holdouts live in holdout_urls_delft.txt and must never be merged into this
+# file — see sources/holdout_delft.yaml.
+
+# --- municipal / tourism ---------------------------------------------------
+https://www.delft.nl/evenementen-delft
+https://www.delft.nl/activiteitenkalender
+https://www.delft.nl/activiteiten-de-wijk-en-stad
+https://tedoen.delft.nl/
+https://www.indelft.nl/nl/uitagenda
+https://www.indelft.nl/nl/uitagenda/uitagenda-delft
+https://www.delft.com/
+https://www.delftonderneemt.nl/agenda
+
+# --- university ------------------------------------------------------------
+https://www.tudelft.nl/en/events
+https://www.tudelft.nl/evenementen
+https://www.tudelft.nl/en/agenda
+https://x.tudelft.nl/
+https://x.tudelft.nl/agenda
+https://x.tudelft.nl/en/events
+https://delta.tudelft.nl/
+https://delta.tudelft.nl/agenda
+https://scvr.tudelft.nl/
+https://www.ch.tudelft.nl/
+https://wisv.ch/
+https://wisv.ch/events
+https://www.vssd.nl/
+
+# --- venues ----------------------------------------------------------------
+https://www.theaterdeveste.nl/programma
+https://www.theaterdeveste.nl/
+https://filmhuis-lumen.nl/
+https://filmhuis-lumen.nl/agenda/
+https://filmhuis-lumen.nl/films/
+https://prinsenhof-delft.nl/
+https://prinsenhof-delft.nl/agenda/
+https://www.lijmencultuur.nl/
+https://www.lijmencultuur.nl/agenda
+https://www.bebopjazzcafe.nl/
+https://www.doerak-delft.nl/
+https://www.cafebacchus.nl/
+https://www.kobuskuch.nl/
+https://www.speakersdelft.nl/
+https://www.oudeennieuwekerkdelft.nl/
+https://www.vak-delft.nl/
+https://www.vak-delft.nl/agenda
+https://www.rietveldtheater.nl/
+https://www.delftsemethode.nl/
+
+# --- editorial -------------------------------------------------------------
+https://www.delftopzondag.nl/
+https://www.delftopzondag.nl/rss
+https://indebuurt.nl/delft/
+https://indebuurt.nl/delft/feed/
+
+# --- non-holdout aggregators ----------------------------------------------
+https://www.theater.nl/delft/theater-de-veste
+https://uit123.nl/delft
+https://www.filmladder.nl/bioscoop/filmhuis-lumen-delft
+
+# --- round 2: correct domains found after the first probe -----------------
+https://www.jazzcafebebop.nl/agenda/
+https://shop.jazzcafebebop.nl/
+https://www.lijmencultuur.nl/activiteiten/
+https://www.lijmencultuur.nl/events/
+https://www.lijmencultuur.nl/events/feed/
+https://www.popdelft.nl/agenda
+https://www.popdelft.nl/
+https://www.museumprinsenhofdelft.nl/
+https://www.museumprinsenhofdelft.nl/agenda/
+https://www.uitagenda.nl/delft
+https://www.podiuminfo.nl/podium/864/Theater-De-Veste/Delft/
+https://www.podiuminfo.nl/podium/2069/Lijm-en-Cultuur/Delft/
+https://www.dagjeweg.nl/kalender/delft

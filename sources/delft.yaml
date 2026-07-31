@@ -1,0 +1,290 @@
+# Delft source registry — live sources, probed 2026-07-31.
+#
+# Every row here was found by `cityfeed probe --file urls_delft.txt` and then
+# verified by running the real extractor against the real bytes. `trust` sets
+# precedence when two sources disagree; lower wins.
+#
+# Disabled rows are kept rather than deleted. A source that cannot be parsed
+# deterministically is a finding — it is where the next unit of work is, and
+# the note says what would have to change. Deleting it loses that.
+#
+# The rule that governs this file: no model calls in the pipeline. If a site
+# renders its dates in JavaScript, the honest entry is `enabled: false`, not a
+# headless browser and not a per-page model call.
+sources:
+
+  # --- municipal / tourism -------------------------------------------------
+
+  - id: indelft_uitagenda
+    city: Delft
+    country: NL
+    type: jsonld
+    url: https://www.indelft.nl/nl/uitagenda/uitagenda-delft
+    trust: 2
+    cadence_minutes: 360
+    locale: nl
+    notes: |
+      The official Delft tourism agenda (delft.com redirects here). Publishes
+      its whole programme as a schema.org ItemList of Events with addresses.
+      Found only after teaching the flattener to descend into itemListElement:
+      before that this page reported "jsonld present, 0 events" — see
+      tests/fixtures/indelft_uitagenda.html.
+
+  - id: delft_nl_activiteitenkalender
+    city: Delft
+    country: NL
+    type: wrapper
+    url: https://www.delft.nl/activiteitenkalender
+    trust: 2
+    cadence_minutes: 720
+    locale: nl
+    enabled: false
+    notes: |
+      Municipal activity calendar. Disabled: the page ships no structured data
+      and no server-rendered event cards — the listing is assembled in the
+      browser, so there is nothing deterministic to select. Re-probe if the
+      site is rebuilt; a municipal feed is the highest-value source here.
+
+  # --- venues --------------------------------------------------------------
+
+  - id: theaterdeveste_programma
+    city: Delft
+    country: NL
+    type: jsonld_index
+    url: https://www.theaterdeveste.nl/programma
+    trust: 3
+    cadence_minutes: 720
+    locale: nl
+    max_detail_pages: 40
+    selectors:
+      link: a[href^="/programma/"]
+    notes: |
+      City theatre, runs on CultureSuite. The listing page carries only a
+      WebSite block, but every detail page behind it has a complete
+      schema.org/Event with doorTime, endDate and a geocoded location. Classic
+      two-level source: tier 0 all along, invisible to a one-page probe.
+
+  - id: filmhuis_lumen_shows
+    city: Delft
+    country: NL
+    type: wp_rest
+    url: https://filmhuis-lumen.nl/wp-json/wp/v2/shows?per_page=100&orderby=date&order=desc
+    trust: 3
+    cadence_minutes: 360
+    locale: nl
+    # The programme names the room ("Zaal 3") and never the cinema. Without
+    # this the venue is unmappable, unmatchable, and reads as a room number in
+    # the UI; with it the categoriser also recognises a screening at a filmhuis.
+    venue_name: Filmhuis Lumen
+    venue_address: Doelenplein 5, 2611 BP Delft
+    selectors:
+      title: title.rendered
+      date: acf.dag
+      time: acf.start_time
+      end_time: acf.end_time
+      venue: acf.room
+      price: acf.prices.0.price
+      url: link
+    notes: |
+      Arthouse cinema. Its public RSS feed is a *blog* feed — the site looks
+      like it has no machine-readable programme. The screenings are in a
+      WordPress custom post type with ACF date fields and are free to read.
+      acf.dag is the compact form 20260914, which dateutil reads as a year
+      unless expanded first.
+
+  - id: popdelft_agenda
+    city: Delft
+    country: NL
+    type: wrapper
+    url: https://www.popdelft.nl/agenda
+    trust: 3
+    cadence_minutes: 360
+    locale: nl
+    selectors:
+      container: a.event-summary
+      title: .event-summary__title
+      # The rendered date reads "zo 2 augustus 2026" — a Dutch month name
+      # dateutil cannot parse. The permalink carries a clean ISO date, and the
+      # clock time is in the same card, so the two are joined.
+      start: "@href"
+      start_regex: "/date/\\d+/(\\d{4}-\\d{2}-\\d{2})/"
+      start_time: .event-summary__date span
+      start_time_regex: "(\\d{1,2}:\\d{2})"
+      description: .event-summary__description
+    notes: |
+      Pop venue programme. Selectors induced once by reading the markup, then
+      replayed for free. If the container selector stops matching, extraction
+      raises and re-induction is scheduled for this domain only.
+
+  - id: jazzcafebebop_shop
+    city: Delft
+    country: NL
+    type: wrapper
+    url: https://shop.jazzcafebebop.nl/
+    trust: 3
+    cadence_minutes: 720
+    locale: nl
+    venue_name: Jazzcafé Bebop
+    venue_address: Kromstraat 33, 2611 EP Delft
+    selectors:
+      container: .event-summary
+      title: .event-summary__title
+      start: a.button@href
+      start_regex: "/date/\\d+/(\\d{4}-\\d{2}-\\d{2})"
+      start_time: .event-summary__date
+      start_time_regex: "(\\d{1,2}:\\d{2})"
+      description: .event-summary__tagline
+    notes: |
+      Delft's jazz venue. Its own site (jazzcafebebop.nl/programma) is an empty
+      shell — the programme lives in the ticket shop. Same SilverStripe
+      ticketing template as popdelft.nl, down to the .event-summary__* classes
+      and the /date/{id}/{iso} permalink, so one induced selector block covers
+      two unrelated Delft venues. That reuse is the tier-1 cost argument in
+      miniature: the template amortises across every site on the platform, not
+      just every page on one site.
+      Thin (a handful of dated events) because the weekly jam sessions are not
+      ticketed and so never appear here.
+
+  - id: museumprinsenhof_agenda
+    city: Delft
+    country: NL
+    type: wrapper
+    url: https://www.museumprinsenhofdelft.nl/
+    trust: 3
+    cadence_minutes: 1440
+    locale: nl
+    enabled: false
+    notes: |
+      Municipal museum, closed for renovation until 2026-12-31 and programming
+      off-site in the meantime. No structured data and no stable event cards.
+      Revisit when the museum reopens.
+
+  - id: lijmencultuur_activiteiten
+    city: Delft
+    country: NL
+    type: wrapper
+    url: https://www.lijmencultuur.nl/activiteiten/
+    trust: 3
+    cadence_minutes: 720
+    locale: nl
+    enabled: false
+    notes: |
+      Cultural venue in a former glue factory. Disabled for a transport reason,
+      not a parsing one: the host serves an incomplete certificate chain and
+      the TLS handshake fails verification. Not worked around — disabling
+      certificate verification to gain one source is a bad trade. The /events/
+      URL shape suggests The Events Calendar, so an .ics export probably exists
+      once the chain is fixed.
+
+  - id: cultuurlab_delft
+    city: Delft
+    country: NL
+    type: wrapper
+    url: https://cultuurlab.nl/
+    trust: 3
+    cadence_minutes: 720
+    locale: nl
+    enabled: false
+    notes: |
+      Found by `cityfeed recall`, not by the probe — this venue was invisible to
+      every source in the registry, and the holdout surfaced four of its events
+      as misses. That is the loop working: the miss list names the source to add
+      next, which is the entire argument for holding sources out.
+      Still disabled: the agenda is rendered client-side and there is nothing
+      server-side to select on. So it is a known, quantified gap rather than an
+      unknown one — which is the difference this measurement buys.
+
+  # --- student associations ------------------------------------------------
+
+  - id: ch_tudelft_ical
+    city: Delft
+    country: NL
+    type: ics
+    url: https://ch.tudelft.nl/feed/ical/
+    trust: 1
+    cadence_minutes: 360
+    locale: nl
+    notes: |
+      W.I.S.V. 'Christiaan Huygens', the maths/CS study association — and the
+      only ICS feed found anywhere in Delft. Trust 1 (organiser) rather than the
+      venue tier: this is the organiser publishing its own calendar, which beats
+      anyone else's summary of it.
+      Worth recording how it was found, because the probe could not have: it is
+      not linked as a feed from anywhere obvious, and every generic path guess
+      (/events.ics, ?ical=1) 404s. It came from local knowledge that student
+      associations run real calendars. The same path on nine other Delft
+      associations returns 404 — this is not a pattern, it is one good source.
+
+      Known limitation, and the reason Delft geocodes at 79% rather than higher:
+      this feed's LOCATION field holds *rooms*, not venues — "Lecture hall Pi",
+      "EEMCS-Hall F", "Hok". Fourteen of the fifteen unresolved Delft venues come
+      from here. No geocoder can resolve a room name and it is right not to try.
+      Setting venue_name to roll them up to the EEMCS building would lift the
+      headline number, and is deliberately not done: a handful of these events
+      are genuinely off-campus, and inventing a campus coordinate for those
+      trades a visible gap for an invisible error. The gap is the honest report.
+
+  - id: isadelft_events
+    city: Delft
+    country: NL
+    type: wrapper
+    url: https://www.isadelft.nl/events
+    trust: 1
+    cadence_minutes: 720
+    locale: en
+    enabled: false
+    notes: |
+      Indian Students Association Delft. Runs large cultural events (Diya,
+      Yuva) that nothing in the registry covers — culturally distinct
+      programming is exactly where a general agenda has blind spots. Disabled:
+      the events page has no server-rendered structure at all to select on.
+      A good candidate for the holdout set if it stays unparseable.
+
+  # --- aggregators ---------------------------------------------------------
+
+  - id: podiuminfo_de_veste
+    city: Delft
+    country: NL
+    type: jsonld
+    url: https://www.podiuminfo.nl/podium/864/Theater-De-Veste/Delft/
+    trust: 4
+    cadence_minutes: 720
+    locale: nl
+    notes: |
+      National venue database. Kept even though it covers a venue already
+      ingested directly: independent corroboration is the point. Two sources
+      agreeing is what `min_sources=2` filters on, and an aggregator is the
+      cheapest way to get a second opinion on a venue.
+
+  - id: theater_nl_de_veste
+    city: Delft
+    country: NL
+    type: jsonld
+    url: https://www.theater.nl/delft/theater-de-veste
+    trust: 4
+    cadence_minutes: 720
+    locale: nl
+    notes: |
+      Theatre aggregator, clean TheaterEvent markup. Same corroboration
+      argument as podiuminfo. Its titles are noisier than the venue's own,
+      which is what the trust tier is for.
+
+  # --- editorial -----------------------------------------------------------
+
+  - id: delft_op_zondag_rss
+    city: Delft
+    country: NL
+    type: rss
+    url: https://www.delftopzondag.nl/rss
+    trust: 5
+    cadence_minutes: 180
+    locale: nl
+    enabled: false
+    notes: |
+      Local paper. Disabled after measurement, and this is the most instructive
+      row in the file. The feed parses fine and yields 50 items — but its
+      <pubDate> is when the article was published, not when anything happens.
+      Ingesting it filled the database with confidently-wrong events dated to
+      the moment the editor hit publish. It stays off unless the paper adds a
+      real event-date field, at which point `date_from` can opt back in.
+      See tests/fixtures/wordpress_news_feed.xml for the regression test.

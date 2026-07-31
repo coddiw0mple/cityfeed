@@ -1,0 +1,59 @@
+# Delft holdout registry — NEVER ingested.
+#
+# These sources exist to answer one question the pipeline cannot answer about
+# itself: what did it miss? `load_registries()` skips any file matching
+# holdout_*.yaml structurally, not by convention, and `cityfeed run` fails loudly
+# if an id or URL from this file appears in the main registry. Only
+# `cityfeed recall` reads it.
+#
+# The moment a holdout is folded into sources/delft.yaml the recall figure
+# becomes self-graded and worth nothing. If you ever want to ingest one of these,
+# promote a fresh holdout first.
+#
+# Chosen for independence from the ingested set: neither is a source any
+# registry row derives from, and they cover different populations — Meetup is
+# community and tech, uitagenda.nl is culture and nightlife.
+sources:
+
+  - id: holdout_meetup_delft
+    city: Delft
+    country: NL
+    type: jsonld
+    url: https://www.meetup.com/find/?location=nl--Delft&source=EVENTS
+    trust: 4
+    locale: en
+    notes: |
+      Community and tech meetups. Almost entirely disjoint from the venue and
+      theatre programming the registry covers, which is what makes it a useful
+      independent channel rather than a second opinion on the same events.
+
+  - id: holdout_uitagenda_delft
+    city: Delft
+    country: NL
+    type: jsonld_index
+    url: https://www.uitagenda.nl/delft
+    trust: 4
+    locale: nl
+    max_detail_pages: 30
+    selectors:
+      link: a[href*="/evenement/"]
+    notes: |
+      National cultural agenda, Delft page. Independent of everything ingested.
+      Already earning its keep: it lists the weekly Bebop jam sessions, which
+      the pipeline cannot see because Bebop's own site publishes only ticketed
+      events and the jams are free.
+
+      Independence caveat for capture-recapture: this is an aggregator, and an
+      aggregator partly copies from the same venue pages the registry reads.
+      That correlation biases the population estimate downward and the coverage
+      estimate upward. Treat the estimate as a ceiling.
+
+# Attempted and unusable, recorded so nobody re-does the work:
+#
+#   Eventbrite Delft   — returns HTTP 405 to any programmatic request, including
+#                        with a browser User-Agent. That is bot protection, and
+#                        working around it is not on the table.
+#   ESN Delft          — runs The Events Calendar, but the calendar has been
+#                        empty since June 2022; they publish to social media now.
+#                        The brief's suggestion of Instagram holdouts is a
+#                        manual observation channel, not an automated one.

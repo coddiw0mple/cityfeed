@@ -1,0 +1,36 @@
+# Madrid source registry.
+#
+# The first entry is the argument: the Ayuntamiento publishes a structured,
+# authoritative, free events feed. Any pipeline paying per-page model costs to
+# scrape Madrid council events out of HTML is buying something already given away.
+sources:
+  - id: madrid_ayuntamiento_api
+    city: Madrid
+    country: ES
+    type: api
+    url: https://datos.madrid.es/egob/catalogo/206974-0-agenda-eventos-culturales-100.json
+    trust: 2
+    cadence_minutes: 720
+    timezone: Europe/Madrid
+    locale: es
+    notes: Official municipal open-data events endpoint. Structured, free, daily.
+
+  - id: madrid_destino_jsonld
+    city: Madrid
+    country: ES
+    type: jsonld
+    url: https://www.madrid-destino.com/en/agenda
+    trust: 3
+    cadence_minutes: 360
+    timezone: Europe/Madrid
+    locale: es
+
+  - id: madrid_cultura_rss
+    city: Madrid
+    country: ES
+    type: rss
+    url: https://www.esmadrid.com/rss/agenda
+    trust: 5
+    cadence_minutes: 240
+    timezone: Europe/Madrid
+    locale: es

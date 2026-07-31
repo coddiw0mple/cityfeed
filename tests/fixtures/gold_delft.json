@@ -1,0 +1,42 @@
+[
+  {
+    "title": "Jazzavond in de Wijnhaven",
+    "start": "2026-09-12T20:00:00",
+    "venue": "Cafe de Wijnhaven",
+    "is_free": true,
+    "city": "Delft",
+    "source_hint": "delft_gemeente_agenda"
+  },
+  {
+    "title": "TU Delft Open Day",
+    "start": "2026-09-13T10:00:00",
+    "venue": "Aula Congress Centre",
+    "is_free": true,
+    "city": "Delft",
+    "source_hint": "tudelft_events"
+  },
+  {
+    "title": "Delft Chamber Music Festival: Opening",
+    "start": "2026-09-14T19:30:00",
+    "venue": "Theater de Veste",
+    "is_free": false,
+    "city": "Delft",
+    "source_hint": "delft_gemeente_agenda"
+  },
+  {
+    "title": "Speakers Debate Night",
+    "start": "2026-09-15T19:00:00",
+    "venue": "Speakers Delft",
+    "is_free": true,
+    "city": "Delft",
+    "source_hint": "speakers_delft_ics"
+  },
+  {
+    "title": "Pubquiz",
+    "start": "2026-09-16T21:00:00",
+    "venue": "Cafe de Wijnhaven",
+    "is_free": false,
+    "city": "Delft",
+    "source_hint": "cafe_wijnhaven_wrapper"
+  }
+]

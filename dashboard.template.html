@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cityfeed — ingestion view</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --ground:#E7E4DC; --panel:#F4F2ED; --panel-2:#EDEAE3;
+  --ink:#16202B; --ink-soft:#5D6772; --ink-faint:#8A9098;
+  --rule:#CBC6BB; --rule-soft:#DCD8D0;
+  --signal:#1B4D8F; --warn:#A63328;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+  --sans:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  background:var(--ground); color:var(--ink); font-family:var(--mono);
+  font-size:13px; line-height:1.45; -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+
+/* ------------------------------------------------------------ shell */
+.shell{display:grid;grid-template-columns:264px 1fr 340px;grid-template-rows:auto 1fr;height:100vh}
+header{
+  grid-column:1/-1;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;
+  padding:12px 18px;background:var(--panel);border-bottom:1px solid var(--rule);
+}
+.wordmark{font-family:var(--sans);font-weight:700;font-size:19px;letter-spacing:-.04em}
+.wordmark span{color:var(--signal)}
+.tagline{color:var(--ink-soft);font-size:11px;letter-spacing:.02em}
+.counters{margin-left:auto;display:flex;gap:16px;font-size:11px}
+.counter b{font-family:var(--sans);font-size:17px;font-weight:700;letter-spacing:-.03em;display:block;line-height:1.1}
+.counter span{color:var(--ink-faint);text-transform:uppercase;letter-spacing:.09em;font-size:9.5px}
+
+aside{background:var(--panel);border-right:1px solid var(--rule);overflow-y:auto;padding:16px 14px 40px}
+main{position:relative;min-width:0}
+.listpane{background:var(--panel);border-left:1px solid var(--rule);overflow-y:auto;min-width:0}
+
+/* ------------------------------------------------------------ filters */
+.grp{margin-bottom:22px}
+.grp-h{
+  text-transform:uppercase;letter-spacing:.13em;font-size:9.5px;color:var(--ink-faint);
+  padding-bottom:6px;margin-bottom:9px;border-bottom:1px solid var(--rule-soft);
+  display:flex;justify-content:space-between;align-items:baseline;
+}
+.grp-h button{background:none;border:0;padding:0;font-size:9.5px;letter-spacing:.08em;color:var(--signal);text-transform:uppercase}
+.seg{display:flex;border:1px solid var(--rule);background:var(--panel-2)}
+.seg button{flex:1;background:none;border:0;padding:7px 4px;font-size:11px;color:var(--ink-soft);border-right:1px solid var(--rule)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--panel)}
+
+.chip{
+  display:flex;align-items:center;gap:8px;width:100%;padding:5px 7px;margin-bottom:2px;
+  background:none;border:0;border-left:2px solid transparent;text-align:left;
+}
+.chip:hover{background:var(--panel-2)}
+.chip[aria-pressed=true]{background:var(--panel-2);border-left-color:var(--dot)}
+.chip .swatch{width:9px;height:9px;flex:none;background:var(--dot);opacity:.28}
+.chip[aria-pressed=true] .swatch{opacity:1}
+.chip .nm{flex:1;font-size:11.5px;color:var(--ink-soft)}
+.chip[aria-pressed=true] .nm{color:var(--ink)}
+.chip .ct{font-size:10.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+
+.check{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:11.5px;color:var(--ink-soft)}
+.check input{accent-color:var(--signal);width:13px;height:13px}
+input[type=search]{
+  width:100%;padding:7px 9px;font:inherit;font-size:11.5px;
+  background:var(--panel-2);border:1px solid var(--rule);color:var(--ink);
+}
+input[type=search]:focus,button:focus-visible,.chip:focus-visible{outline:2px solid var(--signal);outline-offset:1px}
+input[type=range]{width:100%;accent-color:var(--signal)}
+.rangelabel{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-faint);margin-top:3px}
+
+/* ------------------------------------------------------------ map */
+#map{position:absolute;inset:0;background:var(--ground)}
+.mkn{position:absolute;top:-7px;right:-7px;min-width:14px;height:14px;padding:0 3px;
+  border-radius:7px;background:#22262B;color:#fff;font:600 9px/14px system-ui,sans-serif;
+  text-align:center;box-shadow:0 0 0 1.5px #fff}
+.vp h4{margin:0 0 6px;font-size:12px;letter-spacing:.02em}
+.vp ol{margin:0;padding:0;list-style:none;max-height:190px;overflow-y:auto}
+.vp li button{display:block;width:100%;text-align:left;background:none;border:0;
+  padding:4px 0;cursor:pointer;border-top:1px solid #E4E6E9}
+.vp li:first-child button{border-top:0}
+.vp li button:hover .pt{text-decoration:underline}
+.vp .pt{display:block;font-size:12px;color:#22262B}
+.vp .pd{display:block;font-size:10.5px;color:#6B7178;margin-top:1px}
+.vp .pm{padding:5px 0 0;font-size:10.5px;color:#6B7178}
+
+/* Fallback when tile servers are unreachable: graph-paper ground so markers
+   still read as positioned rather than floating on a blank panel. */
+#map.tiles-down{
+  background-image:linear-gradient(var(--rule-soft) 1px,transparent 1px),
+                   linear-gradient(90deg,var(--rule-soft) 1px,transparent 1px);
+  background-size:44px 44px;
+}
+.leaflet-container{background:transparent;font-family:var(--mono)}
+.tilewarn{
+  position:absolute;left:12px;bottom:12px;z-index:600;display:none;
+  background:var(--panel);border:1px solid var(--warn);border-left-width:3px;
+  padding:7px 10px;font-size:10.5px;color:var(--ink-soft);max-width:260px;
+}
+#map.tiles-down ~ .tilewarn{display:block}
+
+/* marker: square, fill = category, border weight = corroboration */
+.mk{width:14px;height:14px;background:var(--dot);border:1px solid rgba(255,255,255,.85);
+    box-shadow:0 0 0 1px rgba(22,32,43,.35);transition:transform .12s}
+.mk.s2{box-shadow:0 0 0 1px rgba(22,32,43,.35),0 0 0 3px rgba(255,255,255,.75),0 0 0 4px rgba(22,32,43,.3)}
+.mk.s3{box-shadow:0 0 0 1px rgba(22,32,43,.35),0 0 0 3px rgba(255,255,255,.75),0 0 0 4px rgba(22,32,43,.3),0 0 0 6px rgba(255,255,255,.6),0 0 0 7px rgba(22,32,43,.28)}
+.mk.on{transform:scale(1.5)}
+.legend{
+  position:absolute;right:12px;bottom:12px;z-index:600;background:var(--panel);
+  border:1px solid var(--rule);padding:9px 11px;font-size:10px;color:var(--ink-soft);
+}
+.legend div{display:flex;align-items:center;gap:7px;margin-top:5px}
+.legend div:first-of-type{margin-top:0}
+.legend .k{width:11px;height:11px;background:var(--ink-soft);flex:none}
+.legend .k.s2{box-shadow:0 0 0 2px var(--panel),0 0 0 3px var(--ink-faint)}
+.legend .k.s3{box-shadow:0 0 0 2px var(--panel),0 0 0 3px var(--ink-faint),0 0 0 5px var(--panel),0 0 0 6px var(--ink-faint)}
+.legend b{text-transform:uppercase;letter-spacing:.1em;font-size:9px;color:var(--ink-faint);font-weight:400;display:block;margin-bottom:6px}
+
+/* ------------------------------------------------------------ list */
+.listhead{
+  position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--rule);
+  padding:10px 14px;font-size:9.5px;text-transform:uppercase;letter-spacing:.13em;color:var(--ink-faint);
+  display:flex;justify-content:space-between;z-index:5;
+}
+.card{padding:11px 14px;border-bottom:1px solid var(--rule-soft);cursor:pointer;border-left:2px solid transparent}
+.card:hover{background:var(--panel-2)}
+.card.on{background:var(--panel-2);border-left-color:var(--dot)}
+.card .when{font-size:10px;color:var(--ink-faint);letter-spacing:.03em;display:flex;gap:7px;align-items:center}
+.card .when .cat{color:var(--dot);text-transform:uppercase;letter-spacing:.1em;font-size:9px}
+.card h3{margin:3px 0 4px;font-family:var(--sans);font-size:14.5px;font-weight:600;letter-spacing:-.02em;line-height:1.25}
+.card .where{font-size:10.5px;color:var(--ink-soft)}
+.card .flag{color:var(--warn)}
+
+/* signature: one segment per contributing source, weight = trust tier */
+.prov{display:flex;gap:2px;margin-top:7px;align-items:center}
+.prov i{height:3px;width:16px;background:var(--ink-faint);display:block}
+.prov i.t1{background:var(--signal)}
+.prov i.t2{background:var(--signal);opacity:.62}
+.prov i.t3{background:var(--ink-soft);opacity:.5}
+.prov i.t5{background:var(--warn);opacity:.55}
+.prov em{font-style:normal;font-size:9.5px;color:var(--ink-faint);margin-left:5px;letter-spacing:.05em}
+
+/* ------------------------------------------------------------ detail */
+.detail{position:absolute;inset:auto 0 0 0;background:var(--panel);border-top:2px solid var(--ink);
+        padding:15px 18px 18px;transform:translateY(101%);transition:transform .22s ease;z-index:700;max-height:64%;overflow-y:auto}
+.detail.open{transform:none}
+.detail .x{position:absolute;top:11px;right:13px;background:none;border:1px solid var(--rule);width:24px;height:24px;line-height:1}
+.detail h2{margin:0 0 3px;font-family:var(--sans);font-size:21px;font-weight:700;letter-spacing:-.03em;padding-right:34px}
+.detail .sub{font-size:11px;color:var(--ink-soft);margin-bottom:13px}
+.dl{display:grid;grid-template-columns:88px 1fr;gap:5px 14px;font-size:11.5px;border-top:1px solid var(--rule-soft);padding-top:11px}
+.dl dt{color:var(--ink-faint);text-transform:uppercase;letter-spacing:.09em;font-size:9.5px;padding-top:2px}
+.dl dd{margin:0}
+.srcrow{display:flex;gap:9px;align-items:baseline;padding:3px 0;border-bottom:1px dotted var(--rule-soft)}
+.srcrow:last-child{border-bottom:0}
+.srcrow b{font-weight:400;font-size:10px;color:var(--ink-faint);min-width:150px}
+.srcrow q{quotes:none;color:var(--ink)}
+.note{margin-top:11px;padding:8px 10px;background:var(--panel-2);border-left:2px solid var(--signal);font-size:10.5px;color:var(--ink-soft)}
+
+.empty{padding:34px 18px;color:var(--ink-faint);font-size:11.5px;text-align:center}
+.mobilebar{display:none}
+
+@media(max-width:1000px){
+  .shell{grid-template-columns:1fr;grid-template-rows:auto auto 42vh 1fr}
+  aside{display:none;border-right:0;border-bottom:1px solid var(--rule)}
+  aside.open{display:block}
+  .listpane{border-left:0;border-top:1px solid var(--rule)}
+  .mobilebar{display:flex;gap:8px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--rule)}
+  .mobilebar button{flex:1;background:var(--panel-2);border:1px solid var(--rule);padding:7px;font-size:11px}
+  .counters{width:100%;margin-left:0;order:3}
+  .legend{display:none}
+  .detail{max-height:78%}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="wordmark">city<span>feed</span></div>
+    <div class="tagline">public event ingestion &middot; Delft &amp; Madrid &middot; canonical view</div>
+    <div class="counters">
+      <div class="counter"><b id="c-total">0</b><span>shown</span></div>
+      <div class="counter"><b id="c-corr">0</b><span>2+ sources</span></div>
+      <div class="counter"><b id="c-nogeo">0</b><span>no coords</span></div>
+    </div>
+  </header>
+
+  <div class="mobilebar">
+    <button id="togglefilters" aria-expanded="false">Filters</button>
+  </div>
+
+  <aside id="filters">
+    <div class="grp">
+      <div class="grp-h">City</div>
+      <div class="seg" id="cityseg">
+        <button data-city="all" aria-pressed="true">All</button>
+        <button data-city="Delft" aria-pressed="false">Delft</button>
+        <button data-city="Madrid" aria-pressed="false">Madrid</button>
+      </div>
+    </div>
+
+    <div class="grp">
+      <div class="grp-h">Search</div>
+      <input type="search" id="q" placeholder="title or venue" autocomplete="off">
+    </div>
+
+    <div class="grp">
+      <div class="grp-h">Type <button id="cat-all">reset</button></div>
+      <div id="cats"></div>
+    </div>
+
+    <div class="grp">
+      <div class="grp-h">Confidence</div>
+      <label class="check"><input type="checkbox" id="f-corr"> Only events 2+ sources agree on</label>
+      <label class="check"><input type="checkbox" id="f-geo"> Only events with coordinates</label>
+      <label class="check"><input type="checkbox" id="f-free"> Free entry only</label>
+    </div>
+
+    <div class="grp">
+      <div class="grp-h">Date</div>
+      <input type="range" id="days" min="1" max="90" value="30">
+      <div class="rangelabel"><span id="dayfrom">today</span><span id="dayto">next 30 days</span></div>
+    </div>
+  </aside>
+
+  <main>
+    <div id="map"></div>
+    <div class="tilewarn">Map tiles unreachable — showing positions on a grid. Open this file locally for the full basemap.</div>
+    <div class="legend">
+      <b>Corroboration</b>
+      <div><i class="k"></i> 1 source</div>
+      <div><i class="k s2"></i> 2 sources</div>
+      <div><i class="k s3"></i> 3+ sources</div>
+    </div>
+    <section class="detail" id="detail" aria-live="polite"></section>
+  </main>
+
+  <div class="listpane">
+    <div class="listhead"><span>Canonical events</span><span id="listcount">0</span></div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* Two data modes.
+ *
+ * Inline: events are baked in at build time. Self-contained, works from a file://
+ * URL with no server, and is what makes the artefact shareable.
+ *
+ * Runtime: set window.CITYFEED_API and the page fetches /v1/events instead,
+ * pushing every filter into query parameters so the server does the work. The
+ * inline path is kept rather than replaced, because "open the html and it
+ * works" is worth more than the small amount of duplication it costs.
+ */
+const INLINE_EVENTS = __DATA__;
+const API = (typeof window !== "undefined" && window.CITYFEED_API) || null;
+const API_KEY = (typeof window !== "undefined" && window.CITYFEED_API_KEY) || null;
+let EVENTS = API ? [] : INLINE_EVENTS;
+
+const CAT_COLOR = {
+  music:"#1B4D8F", nightlife:"#6E3B9C", theatre:"#A63328", art:"#B57518",
+  film:"#1F6E66", food:"#8A5B2E", sport:"#3F7D2B", market:"#7A7D22",
+  academic:"#2E6D8E", community:"#8B4A6B", uncategorised:"#8A9098"
+};
+const SOURCE_LABEL = {
+  indelft_uitagenda:"In Delft uitagenda",
+  theaterdeveste_programma:"Theater de Veste",
+  filmhuis_lumen_shows:"Filmhuis Lumen",
+  popdelft_agenda:"Pop Delft",
+  jazzcafebebop_shop:"Jazzcafé Bebop",
+  ch_tudelft_ical:"W.I.S.V. Christiaan Huygens",
+  podiuminfo_de_veste:"Podiuminfo",
+  theater_nl_de_veste:"Theater.nl",
+  delft_gemeente_agenda:"Gemeente Delft agenda",
+  theater_de_veste:"Theater de Veste",
+  cafe_wijnhaven_wrapper:"Café de Wijnhaven",
+  tudelft_events:"TU Delft events",
+  delft_op_zondag_rss:"Delft op Zondag (paper)",
+  madrid_ayuntamiento_api:"Ayuntamiento de Madrid",
+  madrid_destino_jsonld:"Madrid Destino",
+  madrid_cultura_rss:"esMadrid (paper)"
+};
+const TRUST_LABEL = {1:"organiser",2:"municipal",3:"venue",4:"aggregator",5:"editorial"};
+const catOf = e => e.category || "uncategorised";
+
+const state = {
+  city:"all", q:"", cats:new Set(), corrOnly:false, geoOnly:false, freeOnly:false,
+  days:30, selected:null
+};
+
+const START = new Date("2026-09-07T00:00:00+02:00");
+
+/* Times are rendered in the *city's* timezone, never the viewer's.
+ *
+ * A concert in Delft starts at 20:15 in Delft. Formatting with the browser's
+ * default zone shows it as 23:45 to a reader in India and 11:15 to one in
+ * California -- each of them a plausible-looking, confidently wrong answer to
+ * "what time is this on". The event's timezone is a property of the event. */
+const CITY_TZ = {Delft:"Europe/Amsterdam", Madrid:"Europe/Madrid"};
+const DEFAULT_TZ = "Europe/Amsterdam";
+const fmt = (iso, city) => {
+  const d = new Date(iso);
+  const timeZone = CITY_TZ[city] || DEFAULT_TZ;
+  return d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",timeZone})
+       + " · " + d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",timeZone});
+};
+
+/* ---------------------------------------------------------------- map */
+const map = L.map("map",{zoomControl:false,attributionControl:false}).setView([48.5,0.4],5);
+L.control.zoom({position:"topright"}).addTo(map);
+const mapEl = document.getElementById("map");
+
+let tileOk = false;
+const tiles = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+  {maxZoom:19, subdomains:"abcd"});
+tiles.on("tileload", () => { tileOk = true; mapEl.classList.remove("tiles-down"); });
+tiles.on("tileerror", () => { if(!tileOk) mapEl.classList.add("tiles-down"); });
+tiles.addTo(map);
+// If nothing has loaded shortly after init, assume the tile host is blocked.
+setTimeout(() => { if(!tileOk) mapEl.classList.add("tiles-down"); }, 2600);
+
+const markers = new Map();
+
+/* ------------------------------------------------------------ api mode */
+
+/* Map the API's shape onto the one the renderers already speak, so every
+   render function below is identical in both modes. */
+function adaptApiEvent(item){
+  return {
+    id: item.id,
+    title: item.title,
+    start: item.start,
+    end: item.end,
+    city: item.city,
+    category: item.category,
+    is_free: item.is_free,
+    price: item.price,
+    url: item.url,
+    venue: {
+      id: item.venue && item.venue.id,
+      name: item.venue && item.venue.name,
+      lat: item.venue && item.venue.lat,
+      lon: item.venue && item.venue.lon
+    },
+    /* Normalised to {id, trust, title} -- the shape the provenance UI already
+       speaks -- so the per-source strip and detail pane are untouched by which
+       data mode is active. */
+    sources: (item.sources && item.sources.length
+      ? item.sources.map(s => ({id:s.source_id, trust:s.trust, title:s.title}))
+      : (item.source_ids || []).map(id => ({id, trust:3, title:item.title})))
+  };
+}
+
+/* The filter controls become query parameters: the server filters, the client
+   renders. Doing it the other way round means shipping the whole city to the
+   browser to throw most of it away. */
+function apiParams(){
+  const p = new URLSearchParams();
+  if(state.city !== "all") p.set("city", state.city);
+  if(state.q.trim()) p.set("q", state.q.trim());
+  if(state.cats.size === 1) p.set("category", [...state.cats][0]);
+  if(state.corrOnly) p.set("min_sources", "2");
+  if(state.freeOnly) p.set("free", "true");
+  p.set("from", new Date(START).toISOString());
+  p.set("to", new Date(START.getTime() + state.days*864e5).toISOString());
+  p.set("limit", "200");
+  return p;
+}
+
+let inflight = 0;
+async function loadFromApi(){
+  const token = ++inflight;
+  const headers = API_KEY ? {"X-API-Key": API_KEY} : {};
+  const rows = [];
+  let cursor = null;
+  try{
+    /* Follow the cursor so a filter matching more than one page still shows
+       everything. The cursor is keyed, so this is stable under inserts. */
+    for(let page = 0; page < 10; page++){
+      const p = apiParams();
+      if(cursor) p.set("cursor", cursor);
+      const res = await fetch(`${API}/v1/events?${p}`, {headers});
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const body = await res.json();
+      rows.push(...body.items.map(adaptApiEvent));
+      cursor = body.next_cursor;
+      if(!cursor) break;
+    }
+  }catch(err){
+    if(token === inflight) showApiError(err);
+    return;
+  }
+  /* A slow first request must not overwrite a newer one's results. */
+  if(token !== inflight) return;
+  EVENTS = rows;
+  renderCats();
+  render();
+}
+
+function showApiError(err){
+  const list = document.getElementById("list");
+  if(list) list.innerHTML =
+    `<div class="empty">Could not reach the API at ${API}.<br>${err.message}` +
+    `<br><br>Unset window.CITYFEED_API to fall back to the built-in data.</div>`;
+}
+
+/* ---------------------------------------------------------------- filter */
+function visible(){
+  /* In API mode the server has already applied city/category/free/corroboration
+     and the date window; only the controls that cannot be expressed as a single
+     query parameter are re-applied here. */
+  if(API){
+    return EVENTS.filter(e => {
+      if(state.cats.size && !state.cats.has(catOf(e))) return false;
+      if(state.geoOnly && e.venue.lat == null) return false;
+      return true;
+    });
+  }
+  const cutoff = new Date(START.getTime() + state.days*864e5);
+  const q = state.q.trim().toLowerCase();
+  return EVENTS.filter(e => {
+    /* Real crawls carry events that have already happened -- a cinema's feed
+       lists last week's screenings. The window is bounded at both ends so the
+       view answers "what's on" rather than "what's in the database". */
+    if(new Date(e.start) < START) return false;
+    if(state.city !== "all" && e.city !== state.city) return false;
+    if(state.cats.size && !state.cats.has(catOf(e))) return false;
+    if(state.corrOnly && e.sources.length < 2) return false;
+    if(state.geoOnly && e.venue.lat == null) return false;
+    if(state.freeOnly && e.is_free !== true) return false;
+    if(new Date(e.start) > cutoff) return false;
+    if(q){
+      const hay = (e.title + " " + (e.venue.name||"") + " " + catOf(e)).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+/* ---------------------------------------------------------------- render */
+function renderCats(){
+  const counts = {};
+  EVENTS.forEach(e => {
+    if(state.city !== "all" && e.city !== state.city) return;
+    counts[catOf(e)] = (counts[catOf(e)]||0)+1;
+  });
+  const box = document.getElementById("cats");
+  box.innerHTML = "";
+  Object.keys(CAT_COLOR)
+    .filter(c => counts[c])
+    .sort((a,b) => counts[b]-counts[a])
+    .forEach(c => {
+      const b = document.createElement("button");
+      b.className = "chip";
+      b.style.setProperty("--dot", CAT_COLOR[c]);
+      b.setAttribute("aria-pressed", state.cats.has(c));
+      b.innerHTML = `<span class="swatch"></span><span class="nm">${c}</span><span class="ct">${counts[c]}</span>`;
+      b.onclick = () => {
+        state.cats.has(c) ? state.cats.delete(c) : state.cats.add(c);
+        render();
+      };
+      box.appendChild(b);
+    });
+}
+
+function renderList(rows){
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+  if(!rows.length){
+    list.innerHTML = '<div class="empty">No events match these filters.<br>Try clearing the type selection or widening the date range.</div>';
+    return;
+  }
+  rows.forEach(e => {
+    const card = document.createElement("div");
+    card.className = "card" + (state.selected === e.id ? " on" : "");
+    card.style.setProperty("--dot", CAT_COLOR[catOf(e)]);
+    const segs = e.sources.map(s => `<i class="t${s.trust}"></i>`).join("");
+    const corr = e.sources.length > 1
+      ? `${e.sources.length} sources agree`
+      : `single source`;
+    card.innerHTML = `
+      <div class="when"><span class="cat">${catOf(e)}</span>${fmt(e.start, e.city)}</div>
+      <h3>${escapeHtml(e.title)}</h3>
+      <div class="where">${escapeHtml(e.venue.name||"—")}${e.venue.lat==null?' <span class="flag">· no coords</span>':""}${e.is_free===true?" · free":""}</div>
+      <div class="prov">${segs}<em>${corr}</em></div>`;
+    card.onclick = () => select(e.id, true);
+    list.appendChild(card);
+  });
+}
+
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* One marker per venue, not per event.
+ *
+ * A cinema with a hundred screenings put a hundred markers on one pixel: the
+ * pile was unreadable, hid every venue underneath it, and made the top marker
+ * the only clickable one. Grouping by venue_id — which resolves spelling
+ * variants to one identity — turns that into one pin whose popup lists what is
+ * on, with the date and price per occurrence.
+ *
+ * Provenance survives the grouping: border weight uses the best-corroborated
+ * event at the venue, so a pin never looks less corroborated than its contents,
+ * and the per-source detail is still one click away. */
+function venueKey(e){
+  return e.venue.id || (e.venue.name ? "n:" + e.venue.name : null);
+}
+
+function renderMarkers(rows){
+  markers.forEach(m => map.removeLayer(m));
+  markers.clear();
+
+  const groups = new Map();
+  rows.filter(e => e.venue.lat != null).forEach(e => {
+    const key = venueKey(e);
+    if(key == null) return;
+    if(!groups.has(key)) groups.set(key, {venue:e.venue, events:[]});
+    groups.get(key).events.push(e);
+  });
+
+  const pts = [];
+  groups.forEach((group, key) => {
+    const events = group.events.slice().sort((a,b) => new Date(a.start) - new Date(b.start));
+    const best = events.reduce((m,e) => Math.max(m, e.sources.length), 1);
+    const selectedHere = events.some(e => e.id === state.selected);
+    const label = events.length > 1 ? `<span class="mkn">${events.length}</span>` : "";
+    const icon = L.divIcon({
+      className:"", iconSize:[14,14],
+      html:`<div class="mk ${best>=3?"s3":best===2?"s2":""}${selectedHere?" on":""}"`
+         + ` style="--dot:${CAT_COLOR[catOf(events[0])]}">${label}</div>`
+    });
+
+    const m = L.marker([group.venue.lat, group.venue.lon],
+                       {icon, title:group.venue.name || ""}).addTo(map);
+
+    const lines = events.slice(0, 12).map(e => {
+      const money = e.is_free === true ? "free" : (e.price || "");
+      return `<li><button type="button" data-id="${esc(e.id)}">`
+           + `<span class="pt">${esc(e.title)}</span>`
+           + `<span class="pd">${esc(fmt(e.start, e.city))}${money ? " · " + esc(money) : ""}</span>`
+           + `</button></li>`;
+    }).join("");
+    const more = events.length > 12 ? `<li class="pm">+${events.length - 12} more</li>` : "";
+    m.bindPopup(
+      `<div class="vp"><h4>${esc(group.venue.name || "Unknown venue")}</h4>`
+      + `<ol>${lines}${more}</ol></div>`,
+      {maxWidth:300}
+    );
+    m.on("popupopen", ev => {
+      ev.popup.getElement().querySelectorAll("button[data-id]").forEach(btn => {
+        btn.addEventListener("click", () => select(btn.dataset.id, true));
+      });
+    });
+    if(events.length === 1) m.on("click", () => select(events[0].id, false));
+
+    markers.set(key, m);
+    pts.push([group.venue.lat, group.venue.lon]);
+  });
+
+  if(pts.length && !state.selected) map.fitBounds(pts, {padding:[54,54], maxZoom:14});
+}
+
+function renderDetail(){
+  const box = document.getElementById("detail");
+  const e = EVENTS.find(x => x.id === state.selected);
+  if(!e){ box.classList.remove("open"); box.innerHTML=""; return; }
+  const rows = e.sources.map(s => `
+    <div class="srcrow">
+      <b>${SOURCE_LABEL[s.id]||s.id} · ${TRUST_LABEL[s.trust]}</b>
+      <q>${escapeHtml(s.title)}</q>
+    </div>`).join("");
+  const drift = e.sources.length > 1 && new Set(e.sources.map(s=>s.title)).size > 1;
+  box.innerHTML = `
+    <button class="x" aria-label="Close">×</button>
+    <h2>${escapeHtml(e.title)}</h2>
+    <div class="sub">${fmt(e.start, e.city)} · ${escapeHtml(e.venue.name||"venue unknown")} · ${e.city}</div>
+    <dl class="dl">
+      <dt>Type</dt><dd style="color:${CAT_COLOR[catOf(e)]}">${catOf(e)}</dd>
+      <dt>Entry</dt><dd>${e.is_free===true?"Free":e.is_free===false?"Paid":"Not stated by any source"}</dd>
+      <dt>Address</dt><dd>${escapeHtml(e.venue.address||"not resolved — needs geocoding")}</dd>
+      <dt>Confidence</dt><dd>${e.confidence}</dd>
+      <dt>Listed by</dt><dd>${rows}</dd>
+    </dl>
+    ${drift ? `<div class="note">These ${e.sources.length} listings were written independently and merged into one event. The wording differs across sources — that drift is what the deduplication has to survive.</div>` : ""}`;
+  box.classList.add("open");
+  box.querySelector(".x").onclick = () => { state.selected = null; render(); };
+}
+
+function select(id, pan){
+  state.selected = state.selected === id ? null : id;
+  const e = EVENTS.find(x => x.id === state.selected);
+  if(pan && e && e.venue.lat != null) map.setView([e.venue.lat, e.venue.lon], 15, {animate:true});
+  render();
+}
+
+/* Filter changes that the server can act on trigger a refetch; the ones it
+   cannot (geo-only, selection) are pure re-renders. */
+function refresh(){
+  if(API) loadFromApi(); else render();
+}
+
+function render(){
+  const rows = visible().sort((a,b) => new Date(a.start) - new Date(b.start));
+  renderCats();
+  renderList(rows);
+  renderMarkers(rows);
+  renderDetail();
+  document.getElementById("c-total").textContent = rows.length;
+  document.getElementById("c-corr").textContent = rows.filter(e => e.sources.length>1).length;
+  document.getElementById("c-nogeo").textContent = rows.filter(e => e.venue.lat==null).length;
+  document.getElementById("listcount").textContent = rows.length;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+}
+
+/* ---------------------------------------------------------------- wiring */
+document.getElementById("cityseg").onclick = ev => {
+  const b = ev.target.closest("button"); if(!b) return;
+  state.city = b.dataset.city; state.selected = null; state.cats.clear();
+  [...ev.currentTarget.children].forEach(x => x.setAttribute("aria-pressed", x === b));
+  const focus = {Delft:[[52.0116,4.3571],14], Madrid:[[40.4165,-3.7025],13]}[state.city];
+  if(focus) map.setView(focus[0], focus[1]); else map.setView([48.5,0.4],5);
+  render();
+};
+document.getElementById("q").oninput = e => { state.q = e.target.value; refresh(); };
+document.getElementById("cat-all").onclick = () => { state.cats.clear(); refresh(); };
+document.getElementById("f-corr").onchange = e => { state.corrOnly = e.target.checked; refresh(); };
+document.getElementById("f-geo").onchange  = e => { state.geoOnly  = e.target.checked; render(); };
+document.getElementById("f-free").onchange = e => { state.freeOnly = e.target.checked; refresh(); };
+document.getElementById("days").oninput = e => {
+  state.days = +e.target.value;
+  document.getElementById("dayto").textContent = `next ${state.days} day${state.days>1?"s":""}`;
+  refresh();
+};
+document.getElementById("togglefilters").onclick = ev => {
+  const a = document.getElementById("filters");
+  const open = a.classList.toggle("open");
+  ev.currentTarget.setAttribute("aria-expanded", open);
+};
+document.addEventListener("keydown", e => { if(e.key === "Escape" && state.selected){ state.selected=null; render(); } });
+
+/* Inline mode renders immediately; API mode paints the shell, then fills it. */
+if(API){ renderCats(); render(); loadFromApi(); } else { render(); }
+</script>
+</body>
+</html>

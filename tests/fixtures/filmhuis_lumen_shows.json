@@ -1,0 +1,396 @@
+[
+ {
+  "id": 48237,
+  "date": "2026-07-30T20:00:10",
+  "link": "https://filmhuis-lumen.nl/voorstellingen/la-haine-english-subtitles-expat-cinema-32891/",
+  "title": {
+   "rendered": "La Haine (+English subtitles || Expat Cinema)"
+  },
+  "acf": {
+   "overwrite_show_activetickets": true,
+   "dag": "20260914",
+   "start_time": "21:25:00",
+   "end_time": "23:10:00",
+   "room": "Zaal 4",
+   "doors_opening_time": "20:25:00",
+   "doors_closing_time": "22:25:00",
+   "tickets_status": "In verkoop",
+   "namely": "",
+   "tickets_url": "https://tickets.filmhuis-lumen.nl/nl-nl/Show/Details/32891",
+   "tickets_url_text": "Koop tickets",
+   "prices": [
+    {
+     "name": "FilmFan",
+     "price": 10.2
+    },
+    {
+     "name": "FilmFan",
+     "price": 10.2
+    },
+    {
+     "name": "Standaard",
+     "price": 12.7
+    },
+    {
+     "name": "Standaard",
+     "price": 12.7
+    },
+    {
+     "name": "Cineville",
+     "price": 0
+    },
+    {
+     "name": "Cineville",
+     "price": 0
+    },
+    {
+     "name": "Jongere tot 27jr.",
+     "price": 9.5
+    },
+    {
+     "name": "Jongere tot 27jr.",
+     "price": 9.5
+    },
+    {
+     "name": "Delftpas/R'dampas",
+     "price": 9
+    },
+    {
+     "name": "Delftpas/R'dampas",
+     "price": 9
+    },
+    {
+     "name": "Prometheus ",
+     "price": 9
+    },
+    {
+     "name": "Prometheus ",
+     "price": 9
+    },
+    {
+     "name": "Standaard Res.",
+     "price": 12.7
+    },
+    {
+     "name": "Standaard Res.",
+     "price": 12.7
+    },
+    {
+     "name": "Jongere",
+     "price": 9.5
+    },
+    {
+     "name": "introducee van medewerker",
+     "price": 6
+    },
+    {
+     "name": "Medewerker e-ticket",
+     "price": 0
+    },
+    {
+     "name": "Medewerker",
+     "price": 0
+    },
+    {
+     "name": "introducee van medewerker",
+     "price": 6
+    },
+    {
+     "name": "Medewerker e-ticket",
+     "price": 0
+    },
+    {
+     "name": "Medewerker",
+     "price": 0
+    },
+    {
+     "name": "Lumen Duobon",
+     "price": 0
+    },
+    {
+     "name": "Lumen Kadobon / Duobon",
+     "price": 0
+    },
+    {
+     "name": "MaDiWoDo (betaalwijze Nat. Bioscoopbon!)",
+     "price": 0
+    },
+    {
+     "name": "MaDiWoDo (betaalwijze Nat. Bioscoopbon!)",
+     "price": 0
+    },
+    {
+     "name": "Filmbon titelgebonden",
+     "price": 0
+    },
+    {
+     "name": "Filmbon titelgebonden",
+     "price": 0
+    },
+    {
+     "name": "WeArePublic",
+     "price": 0
+    },
+    {
+     "name": "WeArePublic",
+     "price": 0
+    },
+    {
+     "name": "Gratis",
+     "price": 0
+    },
+    {
+     "name": "Gratis",
+     "price": 0
+    }
+   ],
+   "movie": [
+    41539
+   ]
+  }
+ },
+ {
+  "id": 48232,
+  "date": "2026-07-30T19:00:35",
+  "link": "https://filmhuis-lumen.nl/voorstellingen/the-christophers-32359/",
+  "title": {
+   "rendered": "The Christophers"
+  },
+  "acf": {
+   "overwrite_show_activetickets": true,
+   "dag": "20260806",
+   "start_time": "18:40:00",
+   "end_time": "20:27:00",
+   "room": "Zaal 3 ",
+   "doors_opening_time": "17:40:00",
+   "doors_closing_time": "19:40:00",
+   "tickets_status": "In verkoop",
+   "namely": "",
+   "tickets_url": "https://tickets.filmhuis-lumen.nl/nl-nl/Show/Details/32359",
+   "tickets_url_text": "Koop tickets",
+   "prices": [
+    {
+     "name": "FilmFan",
+     "price": 10.2
+    },
+    {
+     "name": "FilmFan",
+     "price": 10.2
+    },
+    {
+     "name": "Standaard",
+     "price": 12.7
+    },
+    {
+     "name": "Standaard",
+     "price": 12.7
+    },
+    {
+     "name": "Cineville",
+     "price": 0
+    },
+    {
+     "name": "Cineville",
+     "price": 0
+    },
+    {
+     "name": "Jongere tot 27jr.",
+     "price": 9.5
+    },
+    {
+     "name": "Jongere tot 27jr.",
+     "price": 9.5
+    },
+    {
+     "name": "Delftpas/R'dampas",
+     "price": 9
+    },
+    {
+     "name": "Delftpas/R'dampas",
+     "price": 9
+    },
+    {
+     "name": "Prometheus ",
+     "price": 9
+    },
+    {
+     "name": "Prometheus ",
+     "price": 9
+    },
+    {
+     "name": "Standaard Res.",
+     "price": 12.7
+    },
+    {
+     "name": "Standaard Res.",
+     "price": 12.7
+    },
+    {
+     "name": "Jongere",
+     "price": 9.5
+    },
+    {
+     "name": "Medewerker",
+     "price": 0
+    },
+    {
+     "name": "Medewerker e-ticket",
+     "price": 0
+    },
+    {
+     "name": "introducee van medewerker",
+     "price": 6
+    },
+    {
+     "name": "introducee van medewerker",
+     "price": 6
+    },
+    {
+     "name": "Medewerker e-ticket",
+     "price": 0
+    },
+    {
+     "name": "Medewerker",
+     "price": 0
+    },
+    {
+     "name": "Lumen Duobon",
+     "price": 0
+    },
+    {
+     "name": "Lumen Kadobon / Duobon",
+     "price": 0
+    },
+    {
+     "name": "MaDiWoDo (betaalwijze Nat. Bioscoopbon!)",
+     "price": 0
+    },
+    {
+     "name": "MaDiWoDo (betaalwijze Nat. Bioscoopbon!)",
+     "price": 0
+    },
+    {
+     "name": "Filmbon titelgebonden",
+     "price": 0
+    },
+    {
+     "name": "Filmbon titelgebonden",
+     "price": 0
+    },
+    {
+     "name": "WeArePublic",
+     "price": 0
+    },
+    {
+     "name": "WeArePublic",
+     "price": 0
+    },
+    {
+     "name": "Gratis",
+     "price": 0
+    },
+    {
+     "name": "Gratis",
+     "price": 0
+    }
+   ],
+   "movie": [
+    44919
+   ]
+  }
+ },
+ {
+  "id": 48223,
+  "date": "2026-07-30T18:29:48",
+  "link": "https://filmhuis-lumen.nl/voorstellingen/primavera-32876/",
+  "title": {
+   "rendered": "Primavera"
+  },
+  "acf": {
+   "overwrite_show_activetickets": true,
+   "dag": "20260807",
+   "start_time": "14:35:00",
+   "end_time": "16:32:00",
+   "room": "Zaal 1",
+   "doors_opening_time": "13:35:00",
+   "doors_closing_time": "15:35:00",
+   "tickets_status": "In verkoop",
+   "namely": "",
+   "tickets_url": "https://tickets.filmhuis-lumen.nl/nl-nl/Show/Details/32876",
+   "tickets_url_text": "Koop tickets",
+   "prices": [
+    {
+     "name": "FilmFan",
+     "price": 10.2
+    },
+    {
+     "name": "Standaard",
+     "price": 12.7
+    },
+    {
+     "name": "Cineville",
+     "price": 0
+    },
+    {
+     "name": "Jongere tot 27jr.",
+     "price": 9.5
+    },
+    {
+     "name": "Delftpas/R'dampas",
+     "price": 9
+    },
+    {
+     "name": "Prometheus ",
+     "price": 9
+    },
+    {
+     "name": "Standaard Res.",
+     "price": 12.7
+    },
+    {
+     "name": "Jongere",
+     "price": 9.5
+    },
+    {
+     "name": "Medewerker e-ticket",
+     "price": 0
+    },
+    {
+     "name": "introducee van medewerker",
+     "price": 6
+    },
+    {
+     "name": "Medewerker",
+     "price": 0
+    },
+    {
+     "name": "Lumen Duobon",
+     "price": 0
+    },
+    {
+     "name": "Lumen Kadobon / Duobon",
+     "price": 0
+    },
+    {
+     "name": "MaDiWoDo (betaalwijze Nat. Bioscoopbon!)",
+     "price": 0
+    },
+    {
+     "name": "Filmbon titelgebonden",
+     "price": 0
+    },
+    {
+     "name": "WeArePublic",
+     "price": 0
+    },
+    {
+     "name": "Gratis",
+     "price": 0
+    }
+   ],
+   "movie": [
+    44643
+   ]
+  }
+ }
+]

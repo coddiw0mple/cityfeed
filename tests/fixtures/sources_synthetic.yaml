@@ -1,0 +1,81 @@
+# Synthetic sources, used only by the test suite.
+#
+# These six rows and their fixtures are hand-written to exercise pipeline
+# mechanics -- a @graph wrapper, an RRULE, a drifted wrapper selector, three
+# listings of one event that must collapse. They are deliberately *not* in
+# `sources/`, because a fixture built to make the pipeline look good will do
+# exactly that, and any accuracy number derived from them is self-graded.
+#
+# Real measurement runs against sources/delft.yaml and sources/holdout_delft.yaml.
+sources:
+  - id: delft_gemeente_agenda
+    city: Delft
+    country: NL
+    type: jsonld
+    url: https://www.delft.nl/agenda
+    trust: 2
+    cadence_minutes: 720
+    locale: nl
+    notes: Municipal agenda. Authoritative for civic events, slow to update.
+
+  - id: tudelft_events
+    city: Delft
+    country: NL
+    type: jsonld
+    url: https://www.tudelft.nl/en/events
+    trust: 3
+    cadence_minutes: 360
+    locale: en
+    notes: University events. Clean schema.org markup.
+
+  - id: theater_de_veste
+    city: Delft
+    country: NL
+    type: jsonld
+    url: https://www.theaterdeveste.nl/agenda
+    trust: 3
+    cadence_minutes: 720
+    locale: nl
+
+  - id: speakers_delft_ics
+    city: Delft
+    country: NL
+    type: ics
+    url: https://example-venue.nl/events.ics
+    trust: 3
+    cadence_minutes: 360
+    locale: nl
+    notes: Placeholder for any venue exposing an ICS feed - very common on WordPress.
+
+  - id: delft_op_zondag_rss
+    city: Delft
+    country: NL
+    type: rss
+    url: https://www.delftopzondag.nl/rss
+    trust: 5
+    cadence_minutes: 180
+    locale: nl
+    # This synthetic feed is defined to date its items by event, so it opts in.
+    # The real delftopzondag.nl feed does not and is disabled in sources/.
+    date_from: published
+    notes: Local paper. Editorial tier - lowest precedence, useful for recall.
+
+  - id: cafe_wijnhaven_wrapper
+    city: Delft
+    country: NL
+    type: wrapper
+    url: https://example-cafe.nl/programma
+    trust: 3
+    cadence_minutes: 720
+    locale: nl
+    selectors:
+      container: .event-card
+      title: .event-card__title
+      start: time
+      venue: .event-card__venue
+      description: .event-card__body
+      price: .event-card__price
+    notes: |
+      Selectors induced once by a model, then cached here and replayed for free.
+      When the markup drifts the container selector stops matching, extraction
+      raises, and re-induction is scheduled for this domain only.

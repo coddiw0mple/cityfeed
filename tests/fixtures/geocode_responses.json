@@ -1,0 +1,48 @@
+{
+ "pdok_veste": {
+  "response": {
+   "numFound": 1810771,
+   "docs": [
+    {
+     "type": "adres",
+     "weergavenaam": "Vesteplein 1, 2611WG Delft",
+     "id": "adr-469125554cc6b315e1b3f1cc8f612e21",
+     "centroide_ll": "POINT(4.36282639 52.00853149)",
+     "score": 16.127693
+    }
+   ]
+  }
+ },
+ "pdok_wrong_province": {
+  "response": {
+   "numFound": 106123,
+   "docs": [
+    {
+     "type": "adres",
+     "weergavenaam": "Bacchusstraat 1, 1363ZA Almere",
+     "id": "adr-8a76d1490360ca3813dfaa6a2c62a97a",
+     "centroide_ll": "POINT(5.15826111 52.35557649)",
+     "score": 10.608731
+    }
+   ]
+  }
+ },
+ "nominatim_lumen": [
+  {
+   "lat": "52.0047042",
+   "lon": "4.3581109",
+   "type": "cinema",
+   "importance": 6.693141069652884e-05,
+   "display_name": "Lumen, 55, Van Leeuwenhoekpark, Van Leeuwenhoekkwartier, Binnenstad, Delft, Zuid-Holland, Nederland, 2611 DW, Nederland"
+  }
+ ],
+ "nominatim_wrong_country": [
+  {
+   "lat": "36.5092489",
+   "lon": "-83.6037990",
+   "type": "hamlet",
+   "importance": 0.13336833524071104,
+   "display_name": "Bacchus, Claiborne County, East Tennessee, Tennessee, 37879, United States"
+  }
+ ]
+}
