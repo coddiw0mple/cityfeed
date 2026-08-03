@@ -29,3 +29,6 @@ dist/
 
 # Written by the Vercel build from pyproject requires-python.
 .python-version
+
+# macOS
+.DS_Store
