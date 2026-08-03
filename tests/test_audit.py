@@ -55,8 +55,17 @@ def add_event(conn, **kw):
         "source_ids": ",".join(kw.get("sources", ["venue_site"])),
         "members": json.dumps(kw.get("members", [])),
     }
+    # Columns named explicitly rather than positionally: a positional insert
+    # here breaks every test in the file the moment a column is added, which is
+    # exactly what happened when last_seen and withdrawn_at arrived.
     conn.execute(
-        "INSERT OR REPLACE INTO events VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        """
+        INSERT OR REPLACE INTO events
+            (id, city, title, start, end, venue_id, venue_name, venue_lat,
+             venue_lon, url, is_free, price, rrule, description, category,
+             confidence, source_ids, members)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """,
         (
             row["id"], row["city"], row["title"], row["start"].isoformat(),
             row["end"].isoformat() if row["end"] else None,

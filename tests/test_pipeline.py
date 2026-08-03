@@ -769,3 +769,79 @@ def test_neutral_time_cannot_carry_a_merge_on_its_own():
                   title="Death metal avond", start=day.replace(hour=21)),
     ]
     assert len(deduplicate(records, city="Delft", locale="nl")) == 2
+
+
+# ------------------------------------------------- withdrawal of stale events
+
+def test_events_are_withdrawn_when_their_source_stops_listing_them(tmp_path):
+    """A cancelled or pulled event must not live forever.
+
+    Without this the store only ever grows: an event removed from its source
+    stays queryable indefinitely, which for a *live events* product is the
+    worst kind of wrong — confidently listing something that isn't happening.
+    """
+    from cityfeed.cli import connect, persist, withdraw_unseen
+
+    def evt(eid, title):
+        return CanonicalEvent(
+            id=eid, title=title, start=datetime(2026, 9, 1, 20, tzinfo=AMS),
+            city="Delft", venue=Venue(name="Bebop", city="Delft"),
+            members=[RawRecord(source_id="venue_site", source_url="u",
+                               trust=TrustTier.VENUE, title=title,
+                               start=datetime(2026, 9, 1, 20, tzinfo=AMS))],
+        )
+
+    conn = connect(str(tmp_path / "w.db"))
+    persist(conn, [evt("a", "Still on"), evt("b", "Cancelled")], seen_at="2026-08-01T00:00:00")
+
+    # Next crawl: the source succeeds but only lists 'a'.
+    persist(conn, [evt("a", "Still on")], seen_at="2026-08-02T00:00:00")
+    assert withdraw_unseen(conn, "Delft", "2026-08-02T00:00:00", {"venue_site"}) == 1
+
+    live = {r[0] for r in conn.execute("SELECT id FROM events WHERE withdrawn_at IS NULL")}
+    assert live == {"a"}
+    # Soft delete: the row survives for audit.
+    assert conn.execute("SELECT count(*) FROM events").fetchone()[0] == 2
+
+
+def test_a_failed_source_withdraws_nothing(tmp_path):
+    """Absence of evidence is not evidence.
+
+    If a source 403s, its events are not gone — we just did not get to look.
+    Withdrawing on a failed fetch would empty the database the first time an
+    aggregator rate-limited the crawler.
+    """
+    from cityfeed.cli import connect, persist, withdraw_unseen
+
+    event = CanonicalEvent(
+        id="a", title="Concert", start=datetime(2026, 9, 1, 20, tzinfo=AMS), city="Delft",
+        members=[RawRecord(source_id="flaky", source_url="u", trust=TrustTier.VENUE,
+                           title="Concert", start=datetime(2026, 9, 1, 20, tzinfo=AMS))],
+    )
+    conn = connect(str(tmp_path / "w.db"))
+    persist(conn, [event], seen_at="2026-08-01T00:00:00")
+
+    # A later run where 'flaky' did not succeed: nothing may be retired.
+    assert withdraw_unseen(conn, "Delft", "2026-08-02T00:00:00", succeeded=set()) == 0
+    assert withdraw_unseen(conn, "Delft", "2026-08-02T00:00:00", succeeded={"other"}) == 0
+    assert conn.execute(
+        "SELECT count(*) FROM events WHERE withdrawn_at IS NULL"
+    ).fetchone()[0] == 1
+
+
+def test_a_returning_event_is_un_withdrawn(tmp_path):
+    """Sources drop things temporarily; coming back must restore the listing."""
+    from cityfeed.cli import connect, persist, withdraw_unseen
+
+    event = CanonicalEvent(
+        id="a", title="Concert", start=datetime(2026, 9, 1, 20, tzinfo=AMS), city="Delft",
+        members=[RawRecord(source_id="venue_site", source_url="u", trust=TrustTier.VENUE,
+                           title="Concert", start=datetime(2026, 9, 1, 20, tzinfo=AMS))],
+    )
+    conn = connect(str(tmp_path / "w.db"))
+    persist(conn, [event], seen_at="2026-08-01T00:00:00")
+    withdraw_unseen(conn, "Delft", "2026-08-02T00:00:00", {"venue_site"})
+    assert conn.execute("SELECT withdrawn_at FROM events").fetchone()[0] is not None
+
+    persist(conn, [event], seen_at="2026-08-03T00:00:00")
+    assert conn.execute("SELECT withdrawn_at FROM events").fetchone()[0] is None

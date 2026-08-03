@@ -23,7 +23,8 @@ ROOT = Path(__file__).resolve().parent.parent
 def load_events(db: Path, city: str | None) -> list[dict]:
     conn = sqlite3.connect(db)
     conn.row_factory = sqlite3.Row
-    where, params = ("WHERE city = ?", [city]) if city else ("", [])
+    where, params = (("WHERE withdrawn_at IS NULL AND city = ?", [city]) if city
+                     else ("WHERE withdrawn_at IS NULL", []))
     rows = conn.execute(
         f"SELECT * FROM events {where} ORDER BY start", params
     ).fetchall()

@@ -67,6 +67,11 @@ CREATE TABLE IF NOT EXISTS events (
     category    TEXT,
     confidence  REAL,
     source_ids  TEXT NOT NULL,
+    -- When a crawl last saw this event, and when every source that listed it
+    -- stopped. Without these an event lives forever: a cancelled show, or one
+    -- pulled from its source, is indistinguishable from a current one.
+    last_seen   TEXT,
+    withdrawn_at TEXT,
     -- The per-source evidence this event was merged from, as JSON. Kept
     -- because an unexplainable merge is one nobody will trust: the detail
     -- endpoint has to be able to show which source claimed which title.
@@ -107,6 +112,8 @@ CREATE TABLE IF NOT EXISTS source_runs (
 # needs them applied explicitly or every read of the new field fails.
 _MIGRATIONS = [
     ("events", "description", "TEXT"),
+    ("events", "last_seen", "TEXT"),
+    ("events", "withdrawn_at", "TEXT"),
 ]
 
 
@@ -161,8 +168,41 @@ def persist_venues(conn: sqlite3.Connection, events: list[CanonicalEvent]) -> in
     return len(seen)
 
 
-def persist(conn: sqlite3.Connection, events: list[CanonicalEvent]) -> None:
+def withdraw_unseen(
+    conn: sqlite3.Connection, city: str, seen_at: str, succeeded: set[str]
+) -> int:
+    """Retire events that their sources stopped listing.
+
+    The rule that makes this safe: an event is only withdrawn if *every* source
+    that listed it fetched successfully this run and still did not mention it.
+    A source that 403s or times out withdraws nothing, because absence of
+    evidence is not evidence -- the same reason venue similarity returns a
+    neutral score rather than zero when coordinates are missing.
+
+    Soft delete, so the row survives for audit and comes back if the source
+    starts listing it again.
+    """
+    if not succeeded:
+        return 0
+    withdrawn = 0
+    now = datetime.now(dt_timezone.utc).isoformat()
+    rows = conn.execute(
+        "SELECT id, source_ids FROM events "
+        "WHERE city = ? AND withdrawn_at IS NULL AND (last_seen IS NULL OR last_seen < ?)",
+        (city, seen_at),
+    ).fetchall()
+    for event_id, source_ids in rows:
+        listing = {s for s in (source_ids or "").split(",") if s}
+        if listing and listing <= succeeded:
+            conn.execute("UPDATE events SET withdrawn_at = ? WHERE id = ?", (now, event_id))
+            withdrawn += 1
+    conn.commit()
+    return withdrawn
+
+
+def persist(conn: sqlite3.Connection, events: list[CanonicalEvent], seen_at: str | None = None) -> None:
     persist_venues(conn, events)
+    seen_at = seen_at or datetime.now(dt_timezone.utc).isoformat()
     rows = [
         (
             e.id, e.city, e.title, e.start.isoformat(),
@@ -179,6 +219,7 @@ def persist(conn: sqlite3.Connection, events: list[CanonicalEvent]) -> None:
             e.category,
             e.confidence,
             ",".join(e.source_ids),
+            seen_at,
             json.dumps(
                 [
                     {
@@ -197,7 +238,22 @@ def persist(conn: sqlite3.Connection, events: list[CanonicalEvent]) -> None:
         for e in events
     ]
     conn.executemany(
-        "INSERT OR REPLACE INTO events VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows
+        """
+        INSERT INTO events (id, city, title, start, end, venue_id, venue_name,
+                            venue_lat, venue_lon, url, is_free, price, rrule,
+                            description, category, confidence, source_ids,
+                            last_seen, members)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ON CONFLICT (id) DO UPDATE SET
+            title=excluded.title, start=excluded.start, end=excluded.end,
+            venue_id=excluded.venue_id, venue_name=excluded.venue_name,
+            venue_lat=excluded.venue_lat, venue_lon=excluded.venue_lon,
+            url=excluded.url, is_free=excluded.is_free, price=excluded.price,
+            rrule=excluded.rrule, description=excluded.description,
+            category=excluded.category, confidence=excluded.confidence,
+            source_ids=excluded.source_ids, last_seen=excluded.last_seen,
+            members=excluded.members, withdrawn_at=NULL
+        """, rows
     )
     conn.commit()
 
@@ -387,8 +443,17 @@ def cmd_run(args: argparse.Namespace) -> int:
         print(f"wrote {args.json}")
     if not args.dry_run:
         conn = connect(args.db)
-        persist(conn, events)
+        seen_at = datetime.now(dt_timezone.utc).isoformat()
+        persist(conn, events, seen_at)
         persist_source_runs(conn, stats)
+        # Only sources that actually fetched may retire anything.
+        succeeded = {
+            sid for sid, status in stats.items()
+            if not status.startswith(("FAILED", "ERROR", "no payload"))
+        }
+        retired = withdraw_unseen(conn, city, seen_at, succeeded)
+        if retired:
+            print(f"withdrew {retired} events their sources no longer list")
         timezone = specs[0].timezone if specs else "Europe/Amsterdam"
         materialised = persist_occurrences(conn, events, timezone)
         venue_count = conn.execute(

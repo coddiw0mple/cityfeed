@@ -1,9 +1,9 @@
 # cityfeed
 
-Public event ingestion for one city at a time. Delft is live: **8 sources, 237
-raw listings, 232 canonical events, 283 dated occurrences, 73 venues (68
+Public event ingestion for one city at a time. Delft is live: **7 sources, 233
+raw listings, 232 canonical events, 355 dated occurrences, 75 venues (70
 geocoded), zero model calls in the pipeline.** Every number in this file came
-from running the thing against the real web on 2026-07-31. Where a number is
+from running the thing against the real web on 2026-08-02. Where a number is
 bad, it is written down as it is.
 
 **Live:** [cityfeed-delft.vercel.app](https://cityfeed-delft.vercel.app) ·
@@ -164,6 +164,23 @@ new bug; it found an old one that nothing had been looking at.
 - `temporal.small_hours` (1) — one indelft.nl event at 04:03, where the feed
   published a record-creation timestamp as `startDate`.
 
+### Events are withdrawn, not accumulated
+
+A store that only ever grows will confidently list a cancelled show forever.
+The first crawl after theater.nl started 403ing exposed 27 events whose sources
+had stopped listing them, still queryable, indistinguishable from current ones.
+
+So a crawl now retires what its sources no longer mention — with one rule that
+makes it safe: an event is withdrawn only if **every** source that listed it
+fetched *successfully* and still did not mention it. A source that 403s or times
+out withdraws nothing, because absence of evidence is not evidence. It is the
+same principle as venue similarity returning a neutral score rather than zero
+when coordinates are missing.
+
+Soft delete: the row survives for audit, and reappears the moment a source lists
+it again. Without that rule the first aggregator rate-limit would have emptied
+the database.
+
 ### On not tuning blindly
 
 The single missed merge was `Delft Jazz` listed by popdelft.nl at 00:00 against
@@ -187,7 +204,7 @@ one thing and re-measuring is the only reason it is possible to say that.
 | Tier | Cost | Delft sources |
 |---|---|---|
 | `ics` | 0 tokens | 1 |
-| `jsonld` | 0 tokens | 3 |
+| `jsonld` | 0 tokens | 2 |
 | `jsonld_index` | 0 tokens | 1 |
 | `wp_rest` | 0 tokens | 1 |
 | `wrapper` | 1 model call per *domain*, cached | 2 |
@@ -230,7 +247,7 @@ that means "event date", and a feed whose items genuinely are dated by event opt
 in via `date_from: published` — a claim the operator makes on the record, not a
 default the parser assumes.
 
-`sources/delft.yaml` keeps 6 disabled rows with the reason written out. A source
+`sources/delft.yaml` keeps 7 disabled rows with the reason written out. A source
 that cannot be parsed deterministically is a finding, not a gap to paper over
 with a model call.
 
@@ -238,7 +255,7 @@ with a model call.
 
 ## 3. Deduplication
 
-237 raw listings → **232 canonical events. 5 merged, a 2.1% duplication rate.**
+233 raw listings → **232 canonical events. 5 merged, a 2.1% duplication rate.**
 
 That rate is low, and not because the matcher is weak: Delft's sources barely
 overlap. 164 of 237 listings come from two sources — a student association and a
@@ -271,7 +288,7 @@ tokens stripped from the name — whether the city belongs in the venue's name i
 formatting choice each source makes independently. Before that fix, one venue was
 three rows, three map pins and three cache entries.
 
-**68 of 73 Delft venues geocoded (93%)**, covering 206 of 232 events. PDOK first
+**70 of 75 Delft venues geocoded (93%)**, covering 207 of 232 events. PDOK first
 (Dutch national addresses, no key), Nominatim as fallback, three queries per venue
 from most specific to least. A second run makes **zero** network calls.
 
@@ -403,14 +420,19 @@ a reader in India — a plausible-looking, confidently wrong answer.
   measurement section. None are ERROR; `cityfeed audit` exits 0.
 - **2.1% duplication** reflects a source mix that barely overlaps, not a strong
   matcher. Only 4 events have two sources.
-- **53 of 232 events are uncategorised.** The categoriser is keyword-based and
+- **55 of 232 events are uncategorised.** The categoriser is keyword-based and
   returns `None` rather than guessing.
 - **Four sources are disabled for client-side rendering**, including the municipal
   calendar. This is the single largest recoverable gap.
 - **One source is disabled for a broken TLS chain** (lijmencultuur.nl). Disabling
   certificate verification to gain one source is a bad trade.
-- **Eventbrite returns HTTP 405** to programmatic requests. That is bot protection
-  and is not worked around.
+- **Eventbrite returns HTTP 405** and **theater.nl returns 403** to programmatic
+  requests, from CI and from a residential IP alike. That is bot protection and
+  is not worked around; theater.nl is disabled with the date and the reason.
+  Losing it halved the corroborated set, which is why `min_sources=2` returns
+  4 events — an honest consequence of losing a source, not a dedup regression.
+- **podiuminfo.nl 403s from GitHub Actions but not from a residential IP.**
+  It stays enabled, and `/v1/health` reports it stale when CI cannot reach it.
 - **No Docker.** Out of scope for v1, deliberately. Deployment is a static build
   plus one read-only serverless function; crawling runs in CI, not on the host.
 - **Delft only.** `sources/madrid.yaml` exists as the worked example for the

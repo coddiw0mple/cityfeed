@@ -273,7 +273,14 @@ sources:
     trust: 4
     cadence_minutes: 720
     locale: nl
+    enabled: false
     notes: |
+      Disabled 2026-08-02: now returns 403 to any programmatic request, from
+      CI and from a residential IP alike. That is bot protection, and working
+      around it is not on the table. Its 4 events were half the corroboration
+      in the corpus, which is why min_sources=2 now returns 1 event and not 4 —
+      an honest consequence of losing a source rather than a dedup regression.
+
       Theatre aggregator, clean TheaterEvent markup. Same corroboration
       argument as podiuminfo. Its titles are noisier than the venue's own,
       which is what the trust tier is for.

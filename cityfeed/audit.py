@@ -140,7 +140,12 @@ def load_context(
 
     conn.row_factory = sqlite3.Row
     events = []
-    for row in conn.execute("SELECT * FROM events WHERE LOWER(city) = LOWER(?)", (city,)):
+    # Withdrawn events are retired, not deleted. Auditing them would report
+    # quality findings against rows no reader can reach.
+    for row in conn.execute(
+        "SELECT * FROM events WHERE LOWER(city) = LOWER(?) AND withdrawn_at IS NULL",
+        (city,),
+    ):
         keys = row.keys()
         events.append({
             "id": row["id"], "title": row["title"] or "",

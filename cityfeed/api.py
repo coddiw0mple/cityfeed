@@ -220,7 +220,8 @@ def list_events(
     cursor: Optional[str] = None,
     db: sqlite3.Connection = Depends(get_db),
 ):
-    where, params = ["1=1"], []
+    # Withdrawn events are retired, not deleted; they stay for audit.
+    where, params = ["e.withdrawn_at IS NULL"], []
     if city:
         where.append("LOWER(e.city) = LOWER(?)")
         params.append(city)
@@ -306,7 +307,7 @@ def list_events(
 
 @app.get("/v1/events/{event_id}", dependencies=[Depends(require_read)])
 def get_event(event_id: str, request: Request, db: sqlite3.Connection = Depends(get_db)):
-    row = db.execute("SELECT * FROM events WHERE id = ?", (event_id,)).fetchone()
+    row = db.execute("SELECT * FROM events WHERE id = ? AND withdrawn_at IS NULL", (event_id,)).fetchone()
     if row is None:
         raise HTTPException(404, "no such event")
 
@@ -359,7 +360,7 @@ def list_venues(
     rows = db.execute(
         f"""
         SELECT v.*, count(e.id) AS event_count
-        FROM venues v LEFT JOIN events e ON e.venue_id = v.id
+        FROM venues v LEFT JOIN events e ON e.venue_id = v.id AND e.withdrawn_at IS NULL
         WHERE {' AND '.join(where)}
         GROUP BY v.id ORDER BY event_count DESC, v.name LIMIT {limit}
         """,
@@ -402,6 +403,7 @@ def get_venue(
                e.price AS series_price, e.is_free AS series_free, e.source_ids
         FROM occurrences o JOIN events e ON e.id = o.event_id
         WHERE e.venue_id = ? AND o.start >= ? AND o.cancelled = 0
+              AND e.withdrawn_at IS NULL
         ORDER BY o.start LIMIT ?
         """,
         (venue_id, now, limit),
@@ -467,7 +469,8 @@ def list_sources(request: Request, city: Optional[str] = None, db: sqlite3.Conne
 
 @app.get("/v1/categories", dependencies=[Depends(require_read)])
 def list_categories(request: Request, city: Optional[str] = None, db: sqlite3.Connection = Depends(get_db)):
-    where, params = ("WHERE LOWER(city) = LOWER(?)", [city]) if city else ("", [])
+    where, params = (("WHERE withdrawn_at IS NULL AND LOWER(city) = LOWER(?)", [city])
+                     if city else ("WHERE withdrawn_at IS NULL", []))
     rows = db.execute(
         f"SELECT category, count(*) AS n FROM events {where} GROUP BY category ORDER BY n DESC",
         params,
