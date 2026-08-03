@@ -193,7 +193,18 @@ def _merge_cluster(members: list[RawRecord], city: str) -> CanonicalEvent:
     page usually has the better description. Taking the best of each beats
     taking all of the least-bad one.
     """
-    ordered = sorted(members, key=lambda r: (r.trust.value, r.source_id))
+    # Trust first, then the quality of the evidence, then the id for a stable
+    # tie-break. Ordering on trust and id alone let a wrapper beat a JSON-LD
+    # source at the same trust tier purely because its id sorted earlier --
+    # which is how "Delft Jazz" (a regex off a permalink) once beat "Lindy Hop
+    # Swing - Delft Jazz - The Royal Croquettes" (a publisher-asserted Event),
+    # while two other sources agreed on the longer title.
+    from .provenance import TIER_EVIDENCE
+
+    ordered = sorted(
+        members,
+        key=lambda r: (r.trust.value, -TIER_EVIDENCE.get(r.source_type or "", 0.5), r.source_id),
+    )
     primary = ordered[0]
 
     def first(attr: str):

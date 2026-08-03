@@ -18,6 +18,7 @@ cityfeed probe --file urls_delft.txt   # what tier is this URL?
 cityfeed run --city Delft              # fetch, extract, geocode, dedup, store
 cityfeed recall --city Delft           # what did we miss?
 cityfeed audit --city Delft            # is what we kept any good?
+cityfeed metrics --city Delft          # is any source quietly breaking?
 cityfeed venues --city Delft           # where are they, and which didn't resolve
 uvicorn cityfeed.api:app               # serve it
 
@@ -193,6 +194,70 @@ when coordinates are missing.
 Soft delete: the row survives for audit, and reappears the moment a source lists
 it again. Without that rule the first aggregator rate-limit would have emptied
 the database.
+
+### Provenance per field, and what it caught immediately
+
+`members[]` always stored every source's claim, but the merge returned the
+winning *value* and discarded which record supplied it. That loses the question
+people actually ask about a merged record — not "why did these merge" but "why
+does it say 20:00 when the newspaper says 19:30".
+
+`GET /v1/events/{id}` now answers it per field: winning source, extraction tier,
+how many sources agreed, how many dissented, and a **derived** confidence.
+Derived matters. A self-reported score from an extractor is an opinion; it
+cannot know whether it was right. This one multiplies three checkable signals —
+how directly the publisher stated the value, the source's trust tier, and
+whether anyone independently agreed. Corroboration has diminishing returns and
+can never certify a value the extractor had to guess at.
+
+The first query against real data found a bug:
+
+```
+title    popdelft_agenda   tier=wrapper   conf=0.426  agree=1 dissent=2
+```
+
+`Delft Jazz` — a title recovered by regex from a permalink — had beaten
+`Lindy Hop Swing — Delft Jazz - The Royal Croquettes` from a publisher-asserted
+schema.org Event, while two other sources agreed on the longer form. Both are
+`trust: 3`, and the tie-break was alphabetical on source id: `p` sorts before
+`t`. Merges were being decided by the alphabet.
+
+Ordering now breaks ties on evidence quality before id:
+
+```
+title    theaterdeveste_programma   tier=jsonld_index   conf=0.578  agree=1 dissent=2
+start    theaterdeveste_programma   tier=jsonld_index   conf=0.829  agree=2 dissent=1
+```
+
+Title confidence stays low, and correctly so — three sources really do have
+three different strings, so low confidence in the exact wording is the true
+answer rather than a failure.
+
+### Events change, and the change is the interesting part
+
+Withdrawal records that an event vanished. It said nothing about an event that
+*moved*, and "doors moved 19:00 → 20:00" is exactly what a live-events user
+needs and exactly what an `UPDATE` destroys. `event_revisions` is append-only,
+and re-crawling an unchanged event writes nothing — the table logs real changes,
+not crawls.
+
+### Sources break quietly
+
+A wrapper raises when its selector stops matching. A JSON-LD source that returns
+an empty page is indistinguishable from a venue with nothing on.
+
+`cityfeed metrics` compares each source against the median of **its own**
+successful runs. Learned, not configured: a hand-set threshold is wrong the day
+a venue's programme changes size and nobody updates it, while a self-calibrating
+one holds a cinema listing 50 and a chapel listing 2 to sensible standards
+without either number being written down. Failed runs are excluded from the
+baseline — folding a 403's zero into the median teaches the check that zero is
+normal, which is backwards. A collapse exits non-zero and gates CI.
+
+It also reports freshness from *last success* rather than last attempt (a source
+failing for a week is a week stale however often it retried) and breakage rates
+that separate flaky transport from a source that no longer works and has not
+been switched off.
 
 ### On not tuning blindly
 
@@ -387,11 +452,12 @@ is worse than a slow answer.
 | Endpoint | Notes |
 |---|---|
 | `GET /v1/events` | `city, category, from, to, free, min_sources, bbox, q, expand, limit, cursor` |
-| `GET /v1/events/{id}` | full record including `members[]` provenance |
+| `GET /v1/events/{id}` | full record, `members[]`, per-field provenance and change history |
 | `GET /v1/venues` | `city, bbox, has_coords` |
 | `GET /v1/venues/{id}` | venue plus upcoming occurrences with per-date pricing |
 | `GET /v1/sources` | registry + per-source health, last success, record count |
 | `GET /v1/categories` | category counts |
+| `GET /v1/metrics` | freshness, breakage rates, yield regressions |
 | `GET /v1/health` | 200 only if every enabled source succeeded within 2× its cadence |
 | `POST /v1/admin/refresh` | API-key auth, always |
 

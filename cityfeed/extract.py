@@ -730,6 +730,7 @@ def extract(
     else:
         records = handler(doc, spec)
     for record in records:
+        record.source_type = spec.type.value
         _apply_venue_default(record, spec)
         if fetched_at is not None:
             record.fetched_at = fetched_at

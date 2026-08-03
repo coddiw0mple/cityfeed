@@ -165,6 +165,12 @@ class RawRecord(BaseModel):
     source_id: str
     source_url: str
     trust: TrustTier
+    # How this record was extracted. Part of the evidence, not bookkeeping: a
+    # schema.org startDate is a claim the publisher made, while the same date
+    # recovered by regex from a permalink is an inference about their URL
+    # scheme. When two equally-trusted sources disagree, that difference is
+    # the only thing left to decide between them.
+    source_type: Optional[str] = None
     title: str
     start: datetime
     end: Optional[datetime] = None
