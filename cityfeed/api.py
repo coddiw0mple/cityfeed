@@ -515,7 +515,14 @@ def health(city: Optional[str] = None, db: sqlite3.Connection = Depends(get_db))
         "enabled_sources": len(specs),
         "stale": stale,
         "never_succeeded": never,
-        "events": db.execute("SELECT count(*) FROM events").fetchone()[0],
+        # Live rows only: withdrawn events are retired, and reporting them
+        # here would say the corpus is larger than anything served.
+        "events": db.execute(
+            "SELECT count(*) FROM events WHERE withdrawn_at IS NULL"
+        ).fetchone()[0],
+        "withdrawn": db.execute(
+            "SELECT count(*) FROM events WHERE withdrawn_at IS NOT NULL"
+        ).fetchone()[0],
         "occurrences": db.execute("SELECT count(*) FROM occurrences").fetchone()[0],
     }
     return JSONResponse(payload, status_code=200 if ok else 503)
