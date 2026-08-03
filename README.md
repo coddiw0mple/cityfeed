@@ -340,7 +340,7 @@ one thing and re-measuring is the only reason it is possible to say that.
 | `wrapper` | 1 model call per *domain*, cached | 2 |
 | `prose` | 1 model call per *page* | 0 |
 
-**6 of 8 enabled Delft sources parse with zero model calls, covering 215 of 237
+**5 of 7 enabled Delft sources parse with zero model calls, covering 218 of 239
 listings (91%).** The other two are cached CSS templates induced once and
 replayed for free. Nothing in the crawl path calls a model, ever.
 
