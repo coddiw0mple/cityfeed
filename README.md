@@ -17,6 +17,8 @@ cityfeed recall --city Delft           # what did we miss?
 cityfeed audit --city Delft            # is what we kept any good?
 cityfeed venues --city Delft           # where are they, and which didn't resolve
 uvicorn cityfeed.api:app               # serve it
+
+python scripts/venue_census.py --city Delft   # how much of the city is readable at all?
 ```
 
 ---
@@ -76,6 +78,41 @@ two observers are independent, and aggregators are not: they copy from the same
 venue pages the registry reads. That inflates the overlap, shrinks the estimated
 population and makes coverage look better than it is. It is a ceiling, never a
 measurement — and the tool prints that caveat beside every estimate it produces.
+
+### The denominator nobody publishes
+
+`recall` measures against two holdout sources. That is a real denominator but a
+narrow one — it says nothing about how much of the city is machine-readable in
+the first place. So: enumerate every venue in Delft from OpenStreetMap (not from
+a search engine, which ranks the well-marked-up sites this is trying to measure)
+and probe all of them.
+
+**361 venue-like places. 238 with a website. 9 publish machine-readable
+events — 3.8%.** Validated against venues already known to work, which exposed
+the probe's false negatives (it cannot see two-level listing→detail sources), so
+the honest bracket is **5–15%: roughly one venue in ten.**
+
+Why the other 229 cannot be read — measured, because "unstructured" is a shrug
+rather than a diagnosis:
+
+| Reason | Count | % |
+|---|---|---|
+| Points at social media, no on-site programme | 74 | 35% |
+| Mentions programming, publishes no dates | 44 | 21% |
+| No event content at all | 36 | 17% |
+| Events in prose **with** dates | 29 | 14% |
+| JS-rendered, nothing server-side | 19 | 9% |
+| Programme on a ticketing host | 7 | 3% |
+
+**74.6% link to Instagram or Facebook.** Those three groups have entirely
+different fixes: 17% *should* fail, 26% is reachable with tier-0/tier-1 work,
+and 56% is unreachable by any crawler because the data was never published. So
+**3.8% readable today against ~27% technically readable** — 7× headroom, none of
+it requiring per-page model calls, and a hard ceiling above it.
+
+All nine venues the census found were **new** — zero overlap with the eight
+sources assembled by hand via search. Enumerating venues beats searching for
+sources. Full write-up: [docs/venue-census.md](docs/venue-census.md).
 
 ### What is deliberately *not* measured
 
@@ -342,7 +379,7 @@ compared with `secrets.compare_digest`.
 
 ## 7. Dashboard
 
-`dashboard.html` works two ways. Inline, events are baked in at build time and it
+The dashboard works two ways. Inline, events are baked in at build time and it
 runs from a `file://` URL with no server. Set `window.CITYFEED_API` and it fetches
 `/v1/events` instead, mapping every filter control to a query parameter so
 filtering happens server-side.
@@ -391,6 +428,11 @@ corrupted record proving it fires.
 uv venv && uv pip install -e ".[dev,serve]"
 pytest -q
 ```
+
+## Licence
+
+MIT — see [LICENSE](LICENSE). Built as an independent open-source project; it is
+nobody's deliverable and depends on nobody's availability.
 
 ## Deployment
 
