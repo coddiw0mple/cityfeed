@@ -5,7 +5,7 @@ after the fact, from measurements rather than intentions, and it contradicts the
 assumption the project started with.
 
 Numbers are from Delft on 2026-08-03: 7 live sources, 239 raw listings, 234
-canonical events, 285 dated occurrences, 75 venues (70 geocoded), 150 tests.
+canonical events, 285 dated occurrences, 75 venues (70 geocoded), 164 tests.
 
 ---
 

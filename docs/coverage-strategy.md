@@ -27,7 +27,7 @@ publish dates, so it cannot be added to the rows above.
 ## First, a correction
 
 The bottom three rows were initially reported as "55 venues technically
-reachable, ~27% ceiling". That was a hypothesis dressed as a measurement — the
+reachable, ~26% ceiling". That was a hypothesis dressed as a measurement — the
 classifier tagged a page parseable if it contained event-ish words *and*
 date-ish text, which is presence rather than yield, the exact mistake
 [`probe.py`](../cityfeed/probe.py) exists to prevent.
@@ -48,7 +48,7 @@ Checking it:
   Settebello, Sparerib line. Their XHR endpoint returns a menu. Perhaps two or
   three are real venues.
 
-**Corrected ceiling: roughly 25–32 of 238 venues, about 12%.** Not 27%. The
+**Corrected ceiling: roughly 25–32 of 238 venues, about 12%.** Not 26%. The
 correction matters in the direction that hurts: less is winnable by crawling
 than the first pass suggested, so the supply-side argument gets *stronger*.
 

@@ -17,7 +17,7 @@ it, including the parts where the measurement corrected me.
 
 **Delft, 2026-08-03:** 7 sources · 239 raw listings · 234 canonical events ·
 285 dated occurrences (279 upcoming, the rest kept as history) · 75 venues (70 geocoded) · zero model calls in the crawl
-path · 149 tests. Every number here came from running it against the real web.
+path · 164 tests. Every number here came from running it against the real web.
 Where a number is bad, it is written down as it is.
 
 One number belongs in the headline rather than a footnote: **116 of those 239
@@ -609,7 +609,7 @@ a reader in India — a plausible-looking, confidently wrong answer.
 
 ## Testing
 
-**132 tests, no network.** Every real-world failure became a saved payload plus a
+**164 tests, no network.** Every real-world failure became a saved payload plus a
 regression test: the ItemList descent, the news-feed pubDate, the WordPress CPT,
 the compact ACF date, the permalink date, the doorTime recovery, the EXDATE
 day/month swap, the bounding-box rejections, the geocode cache, cursor pagination, ETag 304s, and 34 data-quality checks each with a deliberately
