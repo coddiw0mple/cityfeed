@@ -18,7 +18,10 @@ do not:
 | JS-rendered, nothing server-side | 19 | 9% |
 | Programme on a ticketing host | 7 | 3% |
 
-**74.6% link to Instagram or Facebook.**
+**35% publish nothing on-site and point at social media** (the largest bucket,
+and one of the six above). On a separate, overlapping denominator, **74.6%
+link to Instagram or Facebook at all** — that figure includes sites which also
+publish dates, so it cannot be added to the rows above.
 
 ## First, a correction
 
@@ -102,7 +105,8 @@ per crawl cycle, forever.
 Per page, per item, indefinitely. Justified only where the data exists nowhere
 cheaper.
 
-- **Social post → event** (caption plus image). This is where the 74.6% lives.
+- **Social post → event** (caption plus image). This is where the 35%
+  social-only bucket lives, and part of the 21% that names no dates.
   Also ToS-hostile, so it is a legal question before a technical one.
 - **Poster OCR.** A vision model on an organizer-uploaded flyer is a genuinely
   good use of tier 2: the data exists in no other form, and the upload already

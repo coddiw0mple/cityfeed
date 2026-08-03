@@ -61,9 +61,10 @@ completely, which is why it was worth having.
 
 ### The data does not exist (56% of venues)
 
-74.6% of unreadable venue sites link to Instagram or Facebook. Another 21%
-mention programming — "live muziek elke donderdag" — and publish no dates at
-all. **No model extracts a date nobody wrote down.** This is not a tier-2
+35% of unreadable venue sites publish nothing on-site and point at social
+media instead; 74.6% link to social media at all, on an overlapping denominator
+that includes sites which do publish something. Another 21% mention programming
+— "live muziek elke donderdag" — and publish no dates at all. **No model extracts a date nobody wrote down.** This is not a tier-2
 problem, an OCR problem or a prompt problem. It is not a software problem.
 
 ### JavaScript rendering (9%)

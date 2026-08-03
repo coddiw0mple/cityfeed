@@ -59,8 +59,11 @@ reason, and the reasons have entirely different fixes:
 | JS-rendered, nothing server-side | 19 | 9% | Find the XHR endpoint behind it |
 | Programme on a ticketing host | 7 | 3% | Follow to the other domain |
 
-**74.6% of these sites link to Instagram or Facebook.** That is the single most
-important number here.
+**35% publish nothing on-site and point at social media instead** — the largest single bucket above. Separately, and on a different denominator: **74.6% link to Instagram or Facebook at all**, counting sites that also publish dates or render in JS. The first figure composes with the others to 100%; the second overlaps them and must not be added to them.
+
+Either way it is the most important number here — but only the 35% belongs in
+the table above, and conflating the two is precisely the denominator error this
+document exists to argue against.
 
 ## What it means
 

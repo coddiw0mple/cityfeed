@@ -7,7 +7,8 @@ usual story about this problem is true. It isn't.
 visible problem and deduplication the expensive one. Measured over Delft:
 deduplication is nearly a no-op — **2.1% duplication, 4 events with more than
 one source** — while only **9 of 238 venue websites publish machine-readable
-events at all**, and **74.6% of the rest just link to Instagram**. Supply is the
+events at all**, and **35% of the rest publish nothing on-site and point at
+Instagram instead**. Supply is the
 hard problem. Dedup was cheap because Delft's sources barely overlap, not
 because the matcher is good.
 
@@ -52,7 +53,58 @@ without the denominator it cannot be checked, compared, or falsified. Most
 coverage claims in this space omit it, because the honest denominator is
 unknowable: nobody has a list of every event in a city.
 
-### Recall against held-out sources
+### How much of the city is machine-readable at all
+
+The strongest measurement in the project, and the one everything else is
+downstream of. Enumerate every venue in Delft from OpenStreetMap — not from a
+search engine, which ranks the well-marked-up sites this is trying to measure —
+and probe all of them.
+
+**361 venue-like places. 238 with a website. 9 publish machine-readable
+events — 3.8%.** Validated against venues already known to work, which exposed
+the probe's false negatives (it cannot see two-level listing→detail sources), so
+the honest bracket is **5–15%: roughly one venue in ten.**
+
+Why the other 229 cannot be read — measured, because "unstructured" is a shrug
+rather than a diagnosis:
+
+| Reason | Count | % |
+|---|---|---|
+| Points at social media, no on-site programme | 74 | 35% |
+| Mentions programming, publishes no dates | 44 | 21% |
+| No event content at all | 36 | 17% |
+| Events in prose **with** dates | 29 | 14% |
+| JS-rendered, nothing server-side | 19 | 9% |
+| Programme on a ticketing host | 7 | 3% |
+
+**35% publish nothing on-site and point at social media instead** — the largest single bucket above. Separately, and on a different denominator: **74.6% link to Instagram or Facebook at all**, counting sites that also publish dates or render in JS. The first figure composes with the others to 100%; the second overlaps them and must not be added to them.
+
+Those groups have entirely different fixes: 17% *should* fail, ~11% is reachable
+with tier-0/tier-1 work, and 56% is unreachable by any crawler because the data
+was never published. So
+**3.8% readable today against ~12% technically readable** — 3× headroom, none of
+it requiring per-page model calls, and a hard ceiling above it.
+
+That 12% is itself a correction. The first pass said 26%, from a classifier that
+tagged a page parseable if it held event-ish words *and* date-ish text — presence
+rather than yield, the exact mistake `probe.py` exists to prevent. Verifying it
+halved the number: most "dates" were opening hours, three of the ticketing hosts
+are Eventbrite (a holdout, so ingesting them would invalidate recall), and most
+JS-rendered sites are restaurants. The correction runs in the direction that
+hurts, which is the useful direction to be wrong in.
+[docs/coverage-strategy.md](docs/coverage-strategy.md) has the tiering that
+follows from it.
+
+All nine venues the census found were **new** — zero overlap with the eight
+sources assembled by hand via search. Enumerating venues beats searching for
+sources. Full write-up: [docs/venue-census.md](docs/venue-census.md).
+
+### Recall against held-out sources: the independent check
+
+The census says how much is *publishable*. This says how much we actually
+*got*, measured by a channel the pipeline cannot see — and it is a much smaller
+sample, 15 events against the census's 238 venues, so it corroborates rather
+than carries the argument.
 
 Two public sources — [Meetup Delft](https://www.meetup.com/find/?location=nl--Delft)
 and [uitagenda.nl](https://www.uitagenda.nl/delft) — are **never ingested**.
@@ -77,6 +129,12 @@ flattering one because the miss list says exactly why:
 | Cultuurlab events | 4 | An entire Delft venue that no ingested source lists. Found only because a holdout listed it. |
 | Other | 4 | Single listings at venues outside the registry. |
 
+Note what this can and cannot tell you on its own: 0/15 does not distinguish
+"the pipeline missed events its sources listed" from "those events were never
+published anywhere it ingests". Only the census above separates them, which is
+why it leads. The two together say the corpus is small *and* we are not losing
+much of what is in it.
+
 Both gaps are structural rather than bugs. The pipeline is good at *programmed,
 ticketed* events — theatre, cinema, a university calendar — and blind to *free,
 recurring, café-scale* ones. No amount of tuning fixes that; it needs different
@@ -100,51 +158,6 @@ two observers are independent, and aggregators are not: they copy from the same
 venue pages the registry reads. That inflates the overlap, shrinks the estimated
 population and makes coverage look better than it is. It is a ceiling, never a
 measurement — and the tool prints that caveat beside every estimate it produces.
-
-### The denominator nobody publishes
-
-`recall` measures against two holdout sources. That is a real denominator but a
-narrow one — it says nothing about how much of the city is machine-readable in
-the first place. So: enumerate every venue in Delft from OpenStreetMap (not from
-a search engine, which ranks the well-marked-up sites this is trying to measure)
-and probe all of them.
-
-**361 venue-like places. 238 with a website. 9 publish machine-readable
-events — 3.8%.** Validated against venues already known to work, which exposed
-the probe's false negatives (it cannot see two-level listing→detail sources), so
-the honest bracket is **5–15%: roughly one venue in ten.**
-
-Why the other 229 cannot be read — measured, because "unstructured" is a shrug
-rather than a diagnosis:
-
-| Reason | Count | % |
-|---|---|---|
-| Points at social media, no on-site programme | 74 | 35% |
-| Mentions programming, publishes no dates | 44 | 21% |
-| No event content at all | 36 | 17% |
-| Events in prose **with** dates | 29 | 14% |
-| JS-rendered, nothing server-side | 19 | 9% |
-| Programme on a ticketing host | 7 | 3% |
-
-**74.6% link to Instagram or Facebook.** Those three groups have entirely
-different fixes: 17% *should* fail, ~11% is reachable with tier-0/tier-1 work,
-and 56% is unreachable by any crawler because the data was never published. So
-**3.8% readable today against ~12% technically readable** — 3× headroom, none of
-it requiring per-page model calls, and a hard ceiling above it.
-
-That 12% is itself a correction. The first pass said 26%, from a classifier that
-tagged a page parseable if it held event-ish words *and* date-ish text — presence
-rather than yield, the exact mistake `probe.py` exists to prevent. Verifying it
-halved the number: most "dates" were opening hours, three of the ticketing hosts
-are Eventbrite (a holdout, so ingesting them would invalidate recall), and most
-JS-rendered sites are restaurants. The correction runs in the direction that
-hurts, which is the useful direction to be wrong in.
-[docs/coverage-strategy.md](docs/coverage-strategy.md) has the tiering that
-follows from it.
-
-All nine venues the census found were **new** — zero overlap with the eight
-sources assembled by hand via search. Enumerating venues beats searching for
-sources. Full write-up: [docs/venue-census.md](docs/venue-census.md).
 
 ### What is deliberately *not* measured
 
