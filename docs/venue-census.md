@@ -69,18 +69,24 @@ bad forecasts:
 
 - **36 (17%) should fail.** A restaurant with no programming has nothing to
   extract. Excluding them is correct behaviour, not a miss.
-- **55 (26%) are technically reachable today** — 29 prose-with-dates, 19
-  JS-rendered, 7 on ticketing hosts. All tier-0/tier-1. No per-page model calls.
+- **~25 (11%) are technically reachable** — and this number was initially
+  reported as 55/26%, which was a hypothesis dressed as a measurement. Checking
+  it: only 15 of the 29 "prose with dates" have three or more plausible event
+  dates (the rest are opening hours and copyright years, and one is a terrace
+  season); 3 of the 7 ticketing hosts are Eventbrite, which is a *holdout* and
+  cannot be ingested without invalidating recall; and most of the 19
+  JS-rendered are restaurants whose XHR endpoint returns a menu. See
+  [coverage-strategy.md](coverage-strategy.md).
 - **118 (56%) are unreachable by any crawler.** The event is real but exists
   only on Instagram, or the site says "live muziek elke donderdag" and never
   publishes a date. No model fixes this, because the data was never published.
 
-So: **3.8% readable today against ~27% technically readable** — roughly 7×
+So: **3.8% readable today against ~12% technically readable** — roughly 3×
 headroom, all of it engineering rather than model spend. And a hard ceiling
 above that, because the majority of a city's small-venue programming is simply
 not on the web in any form a crawler can reach.
 
-The corollary is uncomfortable and worth stating plainly: past ~27%, coverage
+The corollary is uncomfortable and worth stating plainly: past ~12%, coverage
 stops being an ingestion problem and becomes a supply-side one. A submission
 form and an ICS import will beat any scraper for those 118 venues, permanently.
 

@@ -105,10 +105,20 @@ rather than a diagnosis:
 | Programme on a ticketing host | 7 | 3% |
 
 **74.6% link to Instagram or Facebook.** Those three groups have entirely
-different fixes: 17% *should* fail, 26% is reachable with tier-0/tier-1 work,
+different fixes: 17% *should* fail, ~11% is reachable with tier-0/tier-1 work,
 and 56% is unreachable by any crawler because the data was never published. So
-**3.8% readable today against ~27% technically readable** — 7× headroom, none of
+**3.8% readable today against ~12% technically readable** — 3× headroom, none of
 it requiring per-page model calls, and a hard ceiling above it.
+
+That 12% is itself a correction. The first pass said 26%, from a classifier that
+tagged a page parseable if it held event-ish words *and* date-ish text — presence
+rather than yield, the exact mistake `probe.py` exists to prevent. Verifying it
+halved the number: most "dates" were opening hours, three of the ticketing hosts
+are Eventbrite (a holdout, so ingesting them would invalidate recall), and most
+JS-rendered sites are restaurants. The correction runs in the direction that
+hurts, which is the useful direction to be wrong in.
+[docs/coverage-strategy.md](docs/coverage-strategy.md) has the tiering that
+follows from it.
 
 All nine venues the census found were **new** — zero overlap with the eight
 sources assembled by hand via search. Enumerating venues beats searching for
