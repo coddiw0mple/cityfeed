@@ -123,3 +123,20 @@ def test_no_document_contradicts_the_census_partition():
         if "209" not in text:
             continue
         assert "238" in text, f"{name} uses the 209 denominator without establishing 238"
+
+
+def test_no_document_claims_rounded_percentages_sum_to_100():
+    """The census percentages round to 99, not 100.
+
+    35 + 21 + 17 + 14 + 9 + 3 = 99. The *counts* sum to 209 exactly, so the
+    partition is complete and only the display is lossy -- but a document that
+    prints those six numbers and then asserts they total 100% has made a
+    checkable claim that fails against the table directly above it. Say 99
+    after rounding, or quote the counts.
+    """
+    for name, text in _docs().items():
+        for claim in ("sums to 100%", "sum to 100%"):
+            if claim in text:
+                assert "after rounding" in text or "counts" in text, (
+                    f"{name} claims percentages {claim} without noting they round to 99"
+                )
