@@ -6,8 +6,9 @@ said was left.
 
 ## The baseline
 
-238 Delft venue websites. **9 publish machine-readable events.** Of the 229 that
-do not:
+238 Delft venue websites. **9 publish machine-readable events, 20 could not be
+fetched at all, and 209 were reachable but unreadable.** Of those **209** —
+the unreachable twenty are excluded, because we never saw what they publish:
 
 | Reason | Count | % |
 |---|---|---|

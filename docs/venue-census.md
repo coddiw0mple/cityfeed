@@ -45,7 +45,13 @@ Search found 8 sources across a full build. One automated pass over the venue
 list found 9 more, none of them the same. **Enumerating venues beats searching
 for sources**, and it is the cheaper of the two by a wide margin.
 
-## Why the other 229 cannot be read
+## Why the reachable rest cannot be read
+
+**238 venue sites with a website: 9 publish machine-readable events, 20 could
+not be fetched at all (DNS, TLS, timeout, 404), and 209 were reachable but not
+machine-readable.** The breakdown below is of those **209** — not of 229. The
+twenty unreachable sites are not evidence of anything: we never saw what they
+publish, and folding them in would claim knowledge we do not have.
 
 "Unstructured" is a shrug, not a diagnosis. Each of these fails for a specific
 reason, and the reasons have entirely different fixes:

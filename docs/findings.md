@@ -59,7 +59,7 @@ completely, which is why it was worth having.
 
 ## 3. Technological limitations, in order of how much they cost
 
-### The data does not exist (56% of venues)
+### The data does not exist (56% of the 209 reachable-but-unreadable sites)
 
 35% of unreadable venue sites publish nothing on-site and point at social
 media instead; 74.6% link to social media at all, on an overlapping denominator

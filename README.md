@@ -65,7 +65,13 @@ events — 3.8%.** Validated against venues already known to work, which exposed
 the probe's false negatives (it cannot see two-level listing→detail sources), so
 the honest bracket is **5–15%: roughly one venue in ten.**
 
-Why the other 229 cannot be read — measured, because "unstructured" is a shrug
+**238 venue sites with a website: 9 publish machine-readable events, 20 could
+not be fetched at all (DNS, TLS, timeout, 404), and 209 were reachable but not
+machine-readable.** The breakdown below is of those **209** — not of 229. The
+twenty unreachable sites are not evidence of anything: we never saw what they
+publish, and folding them in would claim knowledge we do not have.
+
+Why those 209 cannot be read — measured, because "unstructured" is a shrug
 rather than a diagnosis:
 
 | Reason | Count | % |
