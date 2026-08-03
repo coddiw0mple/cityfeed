@@ -184,20 +184,34 @@ def persist_venues(conn: sqlite3.Connection, events: list[CanonicalEvent]) -> in
 
 
 def withdraw_unseen(
-    conn: sqlite3.Connection, city: str, seen_at: str, succeeded: set[str]
+    conn: sqlite3.Connection,
+    city: str,
+    seen_at: str,
+    succeeded: set[str],
+    retired_sources: set[str] | None = None,
 ) -> int:
     """Retire events that their sources stopped listing.
 
-    The rule that makes this safe: an event is only withdrawn if *every* source
-    that listed it fetched successfully this run and still did not mention it.
-    A source that 403s or times out withdraws nothing, because absence of
-    evidence is not evidence -- the same reason venue similarity returns a
-    neutral score rather than zero when coordinates are missing.
+    Two different silences, and conflating them is a bug in either direction:
+
+    * **A source fetched and did not mention the event.** Withdraw it. This is
+      evidence.
+    * **A source failed to fetch.** Withdraw nothing. Absence of evidence is not
+      evidence -- the same reason venue similarity returns a neutral score
+      rather than zero when coordinates are missing. Without this rule the first
+      aggregator rate-limit empties the database.
+
+    And a third case that the first two miss: a source **disabled or removed
+    from the registry**. It will never appear in `succeeded` again, so its
+    events become permanently un-withdrawable and live forever. That is not
+    caution, it is a leak -- it stranded four events from a source disabled for
+    403ing. Deliberate removal by an operator *is* evidence, so those retire.
 
     Soft delete, so the row survives for audit and comes back if the source
     starts listing it again.
     """
-    if not succeeded:
+    retired_sources = retired_sources or set()
+    if not succeeded and not retired_sources:
         return 0
     withdrawn = 0
     now = datetime.now(dt_timezone.utc).isoformat()
@@ -208,9 +222,32 @@ def withdraw_unseen(
     ).fetchall()
     for event_id, source_ids in rows:
         listing = {s for s in (source_ids or "").split(",") if s}
-        if listing and listing <= succeeded:
+        # Every source either reported in, or has been taken out of service.
+        if listing and listing <= (succeeded | retired_sources):
             conn.execute("UPDATE events SET withdrawn_at = ? WHERE id = ?", (now, event_id))
+            # Occurrences are derived and regenerable, so they are deleted
+            # rather than soft-deleted -- otherwise the table grows forever
+            # behind withdrawn events. Human overrides survive: someone
+            # cancelled or repriced that date deliberately, and if the event
+            # returns, that edit should still be there.
+            conn.execute(
+                "DELETE FROM occurrences WHERE event_id = ? AND is_override = 0",
+                (event_id,),
+            )
             withdrawn += 1
+    # Self-healing rather than only correct going forward: occurrences orphaned
+    # by any earlier withdrawal, or by an event that no longer exists at all,
+    # are swept every run. A fix that only applies to future rows leaves the
+    # store permanently wrong about how much data it holds.
+    conn.execute(
+        """
+        DELETE FROM occurrences WHERE is_override = 0 AND event_id IN (
+            SELECT o.event_id FROM occurrences o
+            LEFT JOIN events e ON e.id = o.event_id
+            WHERE e.id IS NULL OR e.withdrawn_at IS NOT NULL
+        )
+        """
+    )
     conn.commit()
     return withdrawn
 
@@ -470,7 +507,15 @@ def cmd_run(args: argparse.Namespace) -> int:
             sid for sid, status in stats.items()
             if not status.startswith(("FAILED", "ERROR", "no payload"))
         }
-        retired = withdraw_unseen(conn, city, seen_at, succeeded)
+        # Sources that used to feed this city and no longer will: disabled in
+        # the registry, or deleted from it. Their events cannot come back.
+        enabled_now = {s.id for s in specs if s.enabled}
+        retired_sources = {
+            row[0] for row in conn.execute(
+                "SELECT DISTINCT source_id FROM source_runs"
+            ) if row[0] not in enabled_now
+        }
+        retired = withdraw_unseen(conn, city, seen_at, succeeded, retired_sources)
         if retired:
             print(f"withdrew {retired} events their sources no longer list")
 
@@ -487,9 +532,15 @@ def cmd_run(args: argparse.Namespace) -> int:
             "SELECT count(*) FROM venues WHERE city = ?", (city,)
         ).fetchone()[0]
         recurring = sum(1 for e in events if e.rrule)
+        # Two different numbers, and reporting one as the other is how a
+        # README ends up with figures that do not reconcile: `materialised` is
+        # what this run generated forward from today, `stored` includes dates
+        # that have since passed and are kept as history.
+        stored = conn.execute("SELECT count(*) FROM occurrences").fetchone()[0]
         print(
-            f"persisted to {args.db}: {len(events)} events, {materialised} occurrences "
-            f"({recurring} recurring series), {venue_count} venues"
+            f"persisted to {args.db}: {len(events)} events, {venue_count} venues, "
+            f"{materialised} occurrences materialised ({recurring} recurring series), "
+            f"{stored} in store including past dates"
         )
     return 0
 

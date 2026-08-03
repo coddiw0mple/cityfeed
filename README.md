@@ -1,10 +1,28 @@
 # cityfeed
 
-Public event ingestion for one city at a time. Delft is live: **7 sources, 233
-raw listings, 232 canonical events, 355 dated occurrences, 75 venues (70
-geocoded), zero model calls in the pipeline.** Every number in this file came
-from running the thing against the real web on 2026-08-02. Where a number is
-bad, it is written down as it is.
+Public event ingestion for one city at a time, built to find out whether the
+usual story about this problem is true. It isn't.
+
+**The thesis this was built on was wrong.** The brief said extraction is the
+visible problem and deduplication the expensive one. Measured over Delft:
+deduplication is nearly a no-op — **2.1% duplication, 4 events with more than
+one source** — while only **9 of 238 venue websites publish machine-readable
+events at all**, and **74.6% of the rest just link to Instagram**. Supply is the
+hard problem. Dedup was cheap because Delft's sources barely overlap, not
+because the matcher is good.
+
+That finding is the project. Everything below is the measurement that produced
+it, including the parts where the measurement corrected me.
+
+**Delft, 2026-08-03:** 7 sources · 239 raw listings · 234 canonical events ·
+285 dated occurrences (279 upcoming, the rest kept as history) · 75 venues (70 geocoded) · zero model calls in the crawl
+path · 149 tests. Every number here came from running it against the real web.
+Where a number is bad, it is written down as it is.
+
+One number belongs in the headline rather than a footnote: **116 of those 239
+listings (49%) come from a single student association**, and another 55 from one
+cinema. This is a small corpus concentrated in two sources, and every rate
+computed over it should be read that way.
 
 **Write-ups:** [findings](docs/findings.md) · [venue census](docs/venue-census.md) ·
 [coverage strategy](docs/coverage-strategy.md) · [adding a city](docs/adding-a-city.md)
@@ -20,9 +38,9 @@ cityfeed recall --city Delft           # what did we miss?
 cityfeed audit --city Delft            # is what we kept any good?
 cityfeed metrics --city Delft          # is any source quietly breaking?
 cityfeed venues --city Delft           # where are they, and which didn't resolve
-uvicorn cityfeed.api:app               # serve it
 
-python scripts/venue_census.py --city Delft   # how much of the city is readable at all?
+python scripts/venue_census.py --city Delft    # how much of the city is readable at all?
+python scripts/threshold_sweep.py              # does the dedup threshold even matter?
 ```
 
 ---
@@ -333,7 +351,7 @@ with a model call.
 
 ## 3. Deduplication
 
-233 raw listings → **232 canonical events. 5 merged, a 2.1% duplication rate.**
+239 raw listings → **234 canonical events. 5 records absorbed, a 2.1% duplication rate.**
 
 That rate is low, and not because the matcher is weak: Delft's sources barely
 overlap. 164 of 237 listings come from two sources — a student association and a
@@ -346,6 +364,24 @@ Three stages: **blocking** (day+geo, day+title-trigram, normalised title — sev
 key families, because any single one has a blind spot), **scoring** (title 0.45 /
 time 0.35 / venue 0.20, threshold 0.72), **clustering** (union-find, then a
 per-field merge by trust precedence).
+
+**Is the 0.72 threshold derived?** No — it arrived with the first commit under a
+docstring describing an intention ("tuned to be deliberately permissive") rather
+than an experiment. `scripts/threshold_sweep.py` is the experiment, replayed
+over the pinned snapshot corpus:
+
+```
+ thresh  canonical  merged  multi  time!  title!
+   0.50        233       6      5      0       1     over-merge appears
+   0.55 … 0.72 234       5      4      0       0     identical across the band
+   0.75 … 0.90 235       4      4      0       0     a real merge is lost
+```
+
+So 0.72 sits in a wide flat plateau and is defensible — but only now that it has
+been measured, and only at *this* source mix. The plateau is wide precisely
+because there are four multi-source events. With genuine overlap the threshold
+would bind and would need re-deriving; the honest claim is "not currently the
+binding constraint", not "correct".
 
 Two design points earn their keep:
 
@@ -366,7 +402,7 @@ tokens stripped from the name — whether the city belongs in the venue's name i
 formatting choice each source makes independently. Before that fix, one venue was
 three rows, three map pins and three cache entries.
 
-**70 of 75 Delft venues geocoded (93%)**, covering 207 of 232 events. PDOK first
+**70 of 75 Delft venues geocoded (93%)**, covering 209 of 234 events. PDOK first
 (Dutch national addresses, no key), Nominatim as fallback, three queries per venue
 from most specific to least. A second run makes **zero** network calls.
 
@@ -438,8 +474,21 @@ timezone, trust tiers, per-source field maps. No Python.
 
 **What does not scale**: sites that render dates in JavaScript. Four of Delft's
 14 rows are disabled for exactly this, including the municipal calendar — the
-highest-value source in the city. A headless browser would fix it and would cost
-the zero-token property, so it is not on the table. The gap is documented instead.
+highest-value source in the city.
+
+An earlier version of this paragraph said a headless browser "would cost the
+zero-token property." That was wrong, and worth correcting rather than quietly
+deleting: **Playwright does not call a model.** Rendering a DOM costs zero
+tokens. The real reasons for not adding one are ordinary engineering ones —
+infrastructure weight in a CI crawl, an order of magnitude more time per page,
+and a much larger surface for breakage — and they are good enough reasons on
+their own without dressing them up as an architectural principle.
+
+The better version of the idea does not need a browser in the crawl at all: use
+one **once, during discovery**, to find the XHR endpoint the page fetches its
+data from, register that endpoint, and let the scheduled crawl stay pure HTTP.
+That is how Jazzcafé Bebop's programme was found by hand. It is not automated,
+and it should be.
 
 ---
 
@@ -461,11 +510,17 @@ is worse than a slow answer.
 | `GET /v1/health` | 200 only if every enabled source succeeded within 2× its cadence |
 | `POST /v1/admin/refresh` | API-key auth, always |
 
-**`min_sources` is the filter that matters.** Anyone can serve events scraped
-from one aggregator. `min_sources=2` returns only events that two independent
-sources listed — a corroboration guarantee, and possible only because dedup kept
-provenance instead of collapsing it. In Delft today it returns **4 events out of
-232**, which is an honest statement about how little Delft's sources overlap.
+**`min_sources` is a corroboration filter**, and worth understanding for what it
+is. `min_sources=2` returns only events that two independent sources listed —
+possible only because dedup keeps provenance instead of collapsing it into a
+single winning record.
+
+At Delft's source mix it returns **4 events out of 234**, so it is a
+demonstrable property rather than a useful product feature today. Calling it "the
+filter that matters" would oversell it: it matters in a city whose sources
+overlap, and Delft's do not. What it demonstrates is that the provenance needed
+to answer "who else said this?" survives the pipeline, which is the part that
+would be expensive to retrofit.
 
 Cursor pagination is keyed on `(start, id)` rather than an offset, so an insert
 during pagination cannot make a client skip or repeat a row. Collections carry an
@@ -498,8 +553,9 @@ a reader in India — a plausible-looking, confidently wrong answer.
 - **Five WARN-severity audit findings remain**, listed and explained in the
   measurement section. None are ERROR; `cityfeed audit` exits 0.
 - **2.1% duplication** reflects a source mix that barely overlaps, not a strong
-  matcher. Only 4 events have two sources.
-- **55 of 232 events are uncategorised.** The categoriser is keyword-based and
+  matcher. Only 4 events have more than one source, and one source is 49% of
+  the corpus. This is the project's central finding, not a caveat.
+- **54 of 234 events are uncategorised.** The categoriser is keyword-based and
   returns `None` rather than guessing.
 - **Four sources are disabled for client-side rendering**, including the municipal
   calendar. This is the single largest recoverable gap.

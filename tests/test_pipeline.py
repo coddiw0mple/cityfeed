@@ -955,3 +955,64 @@ def test_recrawling_an_unchanged_event_writes_no_history(tmp_path):
     for day in ("01", "02", "03"):
         record_provenance(conn, [event], tiers, now=f"2026-08-{day}T00:00:00")
     assert load_history(conn, event.id) == []
+
+
+def test_events_from_a_disabled_source_are_retired(tmp_path):
+    """A disabled source never succeeds again, so its events must not strand.
+
+    The 'only withdraw when every source succeeded' rule is right for transient
+    failures and wrong for deliberate removal: a source taken out of the
+    registry will never appear in `succeeded`, so without this its events are
+    permanently un-withdrawable. It stranded four real events from a source
+    disabled for returning 403.
+    """
+    from cityfeed.cli import connect, persist, withdraw_unseen
+
+    event = CanonicalEvent(
+        id="a", title="Old show", start=datetime(2026, 9, 1, 20, tzinfo=AMS), city="Delft",
+        members=[RawRecord(source_id="dropped", source_url="u", trust=TrustTier.AGGREGATOR,
+                           title="Old show", start=datetime(2026, 9, 1, 20, tzinfo=AMS))],
+    )
+    conn = connect(str(tmp_path / "w.db"))
+    persist(conn, [event], seen_at="2026-08-01T00:00:00")
+
+    # It merely failing this run must not retire it.
+    assert withdraw_unseen(conn, "Delft", "2026-08-02T00:00:00", succeeded=set()) == 0
+    # Being removed from the registry must.
+    assert withdraw_unseen(
+        conn, "Delft", "2026-08-02T00:00:00",
+        succeeded=set(), retired_sources={"dropped"},
+    ) == 1
+    assert conn.execute(
+        "SELECT count(*) FROM events WHERE withdrawn_at IS NULL"
+    ).fetchone()[0] == 0
+
+
+def test_withdrawing_an_event_cleans_its_occurrences_but_keeps_overrides(tmp_path):
+    """Occurrences are derived data; leaving them behind grows the table forever.
+
+    Overrides are not derived — someone cancelled or repriced that specific date
+    on purpose — so those survive a withdrawal and are still there if the event
+    comes back.
+    """
+    from cityfeed.cli import connect, persist, persist_occurrences, withdraw_unseen
+
+    event = CanonicalEvent(
+        id="a", title="Weekly quiz", start=datetime(2026, 9, 1, 20, tzinfo=AMS),
+        city="Delft", rrule="FREQ=WEEKLY",
+        members=[RawRecord(source_id="venue_site", source_url="u", trust=TrustTier.VENUE,
+                           title="Weekly quiz", start=datetime(2026, 9, 1, 20, tzinfo=AMS))],
+    )
+    conn = connect(str(tmp_path / "w.db"))
+    persist(conn, [event], seen_at="2026-08-01T00:00:00")
+    persist_occurrences(conn, [event])
+    before = conn.execute("SELECT count(*) FROM occurrences").fetchone()[0]
+    assert before > 1
+
+    kept = conn.execute("SELECT id FROM occurrences ORDER BY start LIMIT 1").fetchone()[0]
+    conn.execute("UPDATE occurrences SET is_override = 1 WHERE id = ?", (kept,))
+    conn.commit()
+
+    withdraw_unseen(conn, "Delft", "2026-08-02T00:00:00", {"venue_site"})
+    remaining = [r[0] for r in conn.execute("SELECT id FROM occurrences")]
+    assert remaining == [kept]
