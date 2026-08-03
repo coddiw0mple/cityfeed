@@ -29,6 +29,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse
 
 from .models import is_zero_token
+from .provenance import load_history, load_provenance
 
 DB_PATH = os.environ.get("CITYFEED_DB", "data/cityfeed.db")
 # Read endpoints are public unless this is set, so a demo can be handed to
@@ -316,6 +317,13 @@ def get_event(event_id: str, request: Request, db: sqlite3.Connection = Depends(
     # did these two listings merge?" needs to see what each source actually
     # said, including where they disagreed about the title.
     event["members"] = json.loads(row["members"]) if row["members"] else []
+    # Which source won each field, and how sure we are of it. `members` answers
+    # "why did these merge"; this answers "why does it say 20:00 when the
+    # newspaper says 19:30", which is the question people actually ask.
+    event["provenance"] = load_provenance(db, event_id)
+    # Append-only: an event that moved is a fact worth keeping, and overwriting
+    # it makes "did this change?" permanently unanswerable.
+    event["history"] = load_history(db, event_id)
     event["occurrences"] = [
         {
             "id": o["id"], "start": o["start"], "end": o["end"],
@@ -478,6 +486,20 @@ def list_categories(request: Request, city: Optional[str] = None, db: sqlite3.Co
     return _conditional(
         {"items": [{"category": r["category"], "count": r["n"]} for r in rows]}, request
     )
+
+
+@app.get("/v1/metrics", dependencies=[Depends(require_read)])
+def metrics(request: Request, city: Optional[str] = None,
+            db: sqlite3.Connection = Depends(get_db)):
+    """Operational health, as numbers rather than a status word.
+
+    `/v1/health` answers yes or no. This answers "how stale, how often broken,
+    and is any source producing less than it usually does" — the questions you
+    need when the answer to the first one starts wobbling.
+    """
+    from .metrics import snapshot
+
+    return _conditional(snapshot(db, city), request)
 
 
 @app.get("/v1/health")

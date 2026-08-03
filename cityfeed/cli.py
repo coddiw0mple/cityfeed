@@ -8,6 +8,7 @@
     cityfeed run --offline --fixtures DIR  same, from saved payloads
     cityfeed recall --city Delft           measure recall against holdouts
     cityfeed audit --city Delft            data-quality findings by severity
+    cityfeed metrics --city Delft          freshness, breakage, yield regressions
     cityfeed evaluate --gold gold.json     score output against ground truth
 
 The --offline path exists so the pipeline can be developed and graded without
@@ -33,6 +34,7 @@ from .fetch import (
 )
 from .geocode import geocode_records
 from .models import CanonicalEvent, SourceSpec, is_zero_token
+from .provenance import record_provenance
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS venues (
@@ -104,6 +106,19 @@ CREATE TABLE IF NOT EXISTS source_runs (
     records      INTEGER,
     status       TEXT
 );
+
+-- Every run, not just the last one. A source that quietly halves its output is
+-- invisible against a single previous value but obvious against its own
+-- median, and this is what lets the yield check calibrate itself instead of
+-- being hand-tuned per source.
+CREATE TABLE IF NOT EXISTS source_run_history (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_id TEXT NOT NULL,
+    ran_at    TEXT NOT NULL,
+    records   INTEGER NOT NULL,
+    ok        INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS run_history_source ON source_run_history (source_id, id);
 """
 
 
@@ -277,6 +292,10 @@ def persist_source_runs(conn: sqlite3.Connection, stats: dict[str, str]) -> None
                 status       = excluded.status
             """,
             (source_id, now, now if ok else None, records, status),
+        )
+        conn.execute(
+            "INSERT INTO source_run_history (source_id, ran_at, records, ok) VALUES (?,?,?,?)",
+            (source_id, now, records, int(ok)),
         )
     conn.commit()
 
@@ -454,6 +473,14 @@ def cmd_run(args: argparse.Namespace) -> int:
         retired = withdraw_unseen(conn, city, seen_at, succeeded)
         if retired:
             print(f"withdrew {retired} events their sources no longer list")
+
+        # Which source won each field, and what moved since last time. The tier
+        # map is passed in because a record knows its source but not how that
+        # source is parsed, and the difference is most of what confidence means.
+        tiers = {s.id: s.type.value for s in specs}
+        fields, changed = record_provenance(conn, events, tiers, seen_at)
+        print(f"provenance: {fields} field origins recorded", end="")
+        print(f", {changed} values changed since the last crawl" if changed else "")
         timezone = specs[0].timezone if specs else "Europe/Amsterdam"
         materialised = persist_occurrences(conn, events, timezone)
         venue_count = conn.execute(
@@ -593,6 +620,21 @@ def cmd_audit(args: argparse.Namespace) -> int:
     return 1 if report.errors else 0
 
 
+def cmd_metrics(args: argparse.Namespace) -> int:
+    """Operational health: freshness, breakage, and yield regressions."""
+    from .metrics import render, snapshot
+
+    conn = connect(args.db)
+    snap = snapshot(conn, args.city)
+    if args.json:
+        print(json.dumps(snap, indent=2))
+    else:
+        print(render(snap))
+    # A collapsed source is a broken source; exit non-zero so CI can gate on it.
+    collapsed = [r for r in snap["yield_regressions"] if r["severity"] == "collapsed"]
+    return 1 if collapsed else 0
+
+
 def cmd_recall(args: argparse.Namespace) -> int:
     from .recall import run_recall
 
@@ -665,6 +707,12 @@ def main(argv: list[str] | None = None) -> int:
     p_audit.add_argument("--json", action="store_true", help="machine-readable output")
     p_audit.add_argument("--db", default="data/cityfeed.db")
     p_audit.set_defaults(func=cmd_audit)
+
+    p_metrics = sub.add_parser("metrics", help="freshness, breakage, yield regressions")
+    p_metrics.add_argument("--city")
+    p_metrics.add_argument("--json", action="store_true")
+    p_metrics.add_argument("--db", default="data/cityfeed.db")
+    p_metrics.set_defaults(func=cmd_metrics)
 
     p_recall = sub.add_parser("recall", help="measure recall against held-out sources")
     p_recall.add_argument("--city", required=True)

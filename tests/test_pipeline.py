@@ -845,3 +845,113 @@ def test_a_returning_event_is_un_withdrawn(tmp_path):
 
     persist(conn, [event], seen_at="2026-08-03T00:00:00")
     assert conn.execute("SELECT withdrawn_at FROM events").fetchone()[0] is None
+
+
+# --------------------------------------- field provenance and revision history
+
+def _rec(source, trust, **kw):
+    base = dict(source_url="u", title="Jazz Night",
+                start=datetime(2026, 9, 12, 20, tzinfo=AMS))
+    base.update(kw)
+    return RawRecord(source_id=source, trust=trust, **base)
+
+
+def test_provenance_records_which_source_won_each_field(tmp_path):
+    """`members` explains a merge; provenance explains a *field*.
+
+    The merge picks per field by trust and then discards which record supplied
+    the winning value, which loses the only question anyone asks about a merged
+    record: not "why did these merge" but "why does it say this".
+    """
+    from cityfeed.cli import connect
+    from cityfeed.provenance import load_provenance, record_provenance
+
+    venue = _rec("venue_site", TrustTier.VENUE, price="€17,50")
+    paper = _rec("paper", TrustTier.EDITORIAL, title="Jazz Night at the Wijnhaven",
+                 description="a long write-up")
+    event = deduplicate([venue, paper], city="Delft", locale="nl")[0]
+
+    conn = connect(str(tmp_path / "p.db"))
+    fields, changed = record_provenance(
+        conn, [event], {"venue_site": "jsonld", "paper": "rss"}
+    )
+    assert fields > 0 and changed == 0, "first sighting is a baseline, not a change"
+
+    prov = load_provenance(conn, event.id)
+    # The venue's price wins because nobody else stated one.
+    assert prov["price"]["source_id"] == "venue_site"
+    assert prov["price"]["tier"] == "jsonld"
+    # The description only the paper carried is attributed to the paper.
+    assert prov["description"]["source_id"] == "paper"
+
+
+def test_confidence_is_derived_from_evidence_not_asserted(tmp_path):
+    """A self-reported score is an opinion; this one is checkable.
+
+    A startDate out of JSON-LD is a machine-readable claim by the venue. The
+    same date scraped off a permalink by regex is an inference about their URL
+    scheme. Those must not score the same.
+    """
+    from cityfeed.provenance import FieldOrigin
+
+    jsonld = FieldOrigin("start", "x", "a", trust=3, tier="jsonld")
+    wrapper = FieldOrigin("start", "x", "b", trust=3, tier="wrapper")
+    assert jsonld.confidence > wrapper.confidence
+
+    # Independent agreement helps, with diminishing returns.
+    alone = FieldOrigin("start", "x", "a", trust=3, tier="jsonld", agreeing=1)
+    pair = FieldOrigin("start", "x", "a", trust=3, tier="jsonld", agreeing=2)
+    crowd = FieldOrigin("start", "x", "a", trust=3, tier="jsonld", agreeing=6)
+    assert alone.confidence < pair.confidence <= crowd.confidence
+    assert crowd.confidence - pair.confidence < pair.confidence - alone.confidence
+
+    # Disagreement is a real signal that somebody is wrong.
+    disputed = FieldOrigin("start", "x", "a", trust=3, tier="jsonld", agreeing=2, dissenting=2)
+    assert disputed.confidence < pair.confidence
+
+    # Corroboration can never certify a value the extractor had to guess at.
+    assert FieldOrigin("start", "x", "a", trust=1, tier="rss", agreeing=6).confidence < 0.8
+    # And a missing value is not confident, it is absent.
+    assert FieldOrigin("price", None, "a", trust=1, tier="ics").confidence == 0.0
+
+
+def test_a_changed_start_time_is_kept_as_history_not_overwritten(tmp_path):
+    """"Doors moved 19:00 to 20:00" is exactly what an UPDATE destroys."""
+    from cityfeed.cli import connect
+    from cityfeed.provenance import load_history, record_provenance
+
+    def at(hour):
+        rec = _rec("venue_site", TrustTier.VENUE,
+                   start=datetime(2026, 9, 12, hour, tzinfo=AMS))
+        return deduplicate([rec], city="Delft", locale="nl")[0]
+
+    conn = connect(str(tmp_path / "p.db"))
+    first = at(19)
+    record_provenance(conn, [first], {"venue_site": "jsonld"}, now="2026-08-01T00:00:00")
+    assert load_history(conn, first.id) == [], "a baseline is not a change"
+
+    # Same event id: the venue moved the time, it did not announce a new show.
+    moved = at(20)
+    moved.id = first.id
+    _, changed = record_provenance(
+        conn, [moved], {"venue_site": "jsonld"}, now="2026-08-02T00:00:00"
+    )
+    assert changed == 1
+
+    history = load_history(conn, first.id)
+    assert len(history) == 1
+    assert history[0]["field"] == "start"
+    assert "19:00" in history[0]["from"] and "20:00" in history[0]["to"]
+
+
+def test_recrawling_an_unchanged_event_writes_no_history(tmp_path):
+    """The table is a log of real changes, not a log of crawls."""
+    from cityfeed.cli import connect
+    from cityfeed.provenance import load_history, record_provenance
+
+    event = deduplicate([_rec("venue_site", TrustTier.VENUE)], city="Delft", locale="nl")[0]
+    conn = connect(str(tmp_path / "p.db"))
+    tiers = {"venue_site": "jsonld"}
+    for day in ("01", "02", "03"):
+        record_provenance(conn, [event], tiers, now=f"2026-08-{day}T00:00:00")
+    assert load_history(conn, event.id) == []

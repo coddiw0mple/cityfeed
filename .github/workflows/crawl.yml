@@ -44,6 +44,19 @@ jobs:
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: Source yield regression
+        # Exits non-zero when a source collapses against its own median. This
+        # is the 'expected 20, actual 0' check: a wrapper raises when its
+        # selector breaks, but a JSON-LD source returning an empty page is
+        # indistinguishable from a quiet week unless compared to its history.
+        run: |
+          {
+            echo '## metrics'
+            echo '```'
+            cityfeed metrics --city Delft || echo "SOURCE YIELD REGRESSION"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Measure recall against held-out sources
         # Never fails the build. Recall going down is a finding about the city's
         # sources, not a broken pipeline, and hiding it behind a red X would
