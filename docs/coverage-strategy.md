@@ -144,5 +144,5 @@ easier than not publishing.
 2. **Per-page model calls buy the least coverage per euro** and the bill grows
    with every city. Tier 1 buys nearly the same coverage at a fixed cost.
 3. **The denominator is the deliverable.** "We read 9 of 238 venues, here are
-   the other 229 and why" is checkable. "94% coverage" is not, and the
+   the 209 we could look at and why, and the 20 we could not reach" is checkable. "94% coverage" is not, and the
    difference shows up the first time somebody spot-checks a city.
