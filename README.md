@@ -213,6 +213,21 @@ Soft delete: the row survives for audit, and reappears the moment a source lists
 it again. Without that rule the first aggregator rate-limit would have emptied
 the database.
 
+That rule then turned out to have a hole, found by a reviewer noticing the
+README's figures did not reconcile. It is right about *transient* failure and
+wrong about *deliberate removal*: a source disabled in the registry never
+appears in the succeeded set again, so its events were permanently
+un-withdrawable — four theater.nl events were stranded live forever. An operator
+taking a source out of service **is** evidence, so those retire too. Two
+different silences that look identical from inside a single crawl.
+
+Occurrences had the same shape of leak: derived rows left behind withdrawn
+events, growing without bound. They are now swept every run rather than only on
+new withdrawals, because a fix that applies only going forward leaves the store
+permanently wrong about what it holds. Human overrides survive the sweep —
+someone cancelled or repriced that specific date on purpose, and that is not
+derived data.
+
 ### Provenance per field, and what it caught immediately
 
 `members[]` always stored every source's claim, but the merge returned the

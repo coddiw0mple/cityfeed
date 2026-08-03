@@ -26,3 +26,6 @@ dashboard.html
 # setuptools build artefacts
 build/
 dist/
+
+# Written by the Vercel build from pyproject requires-python.
+.python-version

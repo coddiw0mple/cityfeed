@@ -4,1665 +4,1665 @@
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "http://strombolidelft.nl"
+  "reason": "no event content on the site at all"
  },
  "http://www.cultuurlab.nl": {
   "name": "Cultuurlab",
   "kind": "arts_centre",
   "events": 0,
   "how": "none",
-  "where": "http://www.cultuurlab.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "http://www.pizzeriadasalvatore.nl": {
   "name": "Pizzeria da Salvatore",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "http://www.pizzeriadasalvatore.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "http://www.restaurantfarmhouse.nl": {
   "name": "Restaurant Farmhouse",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "http://www.restaurantfarmhouse.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "http://www.snookercafepeperstraat.nl": {
   "name": "Snookercafé Peperstraat",
   "kind": "pub",
   "events": 0,
   "how": "error",
-  "where": "http://www.snookercafepeperstraat.nl"
+  "reason": null
  },
  "https://38cc.nl": {
   "name": "38CC",
   "kind": "gallery",
   "events": 0,
   "how": "none",
-  "where": "https://38cc.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://aegee-delft.nl": {
   "name": "AEGEE-Delft",
   "kind": "bar",
   "events": 36,
   "how": "cpt",
-  "where": "https://aegee-delft.nl"
+  "reason": null
  },
  "https://affogatodelft.nl": {
   "name": "Affogato",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://affogatodelft.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://angiesjuicebar.nl": {
   "name": "Angie's Juicebar",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://angiesjuicebar.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://bar-s.nl": {
   "name": "Bar S",
   "kind": "bar",
   "events": 0,
   "how": "none",
-  "where": "https://bar-s.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://bierhuisdeklomp.nl": {
   "name": "De Klomp",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://bierhuisdeklomp.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://bijderoos.nl": {
   "name": "Bej de Roos",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://bijderoos.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://brasserielalou.nl": {
   "name": "Lalou",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://brasserielalou.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://cafedeboog.nl": {
   "name": "Café De Boog",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://cafedeboog.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://cafedevolder.nl": {
   "name": "Café de Volder",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://cafedevolder.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://cafedoerak.nl": {
   "name": "Doerak",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://cafedoerak.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://cafehetklooster.nl": {
   "name": "Het Klooster",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://cafehetklooster.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://cafelabs.nl": {
   "name": "Café Labs",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://cafelabs.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://coffee-star.nl": {
   "name": "Coffee-star",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://coffee-star.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://coffeecompany.nl/locations?city=Delft": {
   "name": "Coffee Company",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://coffeecompany.nl/locations?city=Delft"
+  "reason": "points at social media, no on-site programme"
  },
  "https://cortado-espressobar.nl": {
   "name": "Cortado Cafe",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://cortado-espressobar.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://csrdelft.nl": {
   "name": "C.S.R. Delft",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://csrdelft.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://de-waag.nl": {
   "name": "De Waag",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://de-waag.nl"
+  "reason": "programme lives on a ticketing host (different domain)"
  },
  "https://deatmosfeer.nl": {
   "name": "De Atmosfeer",
   "kind": "bar",
   "events": 0,
   "how": "none",
-  "where": "https://deatmosfeer.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://debeierd.nl": {
   "name": "De Beierd",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://debeierd.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://debolk.nl": {
   "name": "De Bolk",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://debolk.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://dedelftsehout.nl": {
   "name": "Tennisvereniging De Delftse Hout",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://dedelftsehout.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://degist.nl/en": {
   "name": "De Gist",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://degist.nl/en"
+  "reason": "no event content on the site at all"
  },
  "https://delft.corps.nl": {
   "name": "Delftsch Studenten Corps",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://delft.corps.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://delft.ilovesushiholland.nl": {
   "name": "I Love Pokebowl & Sushi",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://delft.ilovesushiholland.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://delftsbrouwhuis.nl": {
   "name": "Delfts Brouwhuis",
   "kind": "pub",
   "events": 70,
   "how": "cpt",
-  "where": "https://delftsbrouwhuis.nl"
+  "reason": null
  },
  "https://delftstoneelgezelschap.nl": {
   "name": "Falie Begijnhoftheater",
   "kind": "theatre",
   "events": 0,
   "how": "none",
-  "where": "https://delftstoneelgezelschap.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://delibardelft.nl": {
   "name": "Delibar Delft",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://delibardelft.nl"
+  "reason": "no event content on the site at all"
  },
  "https://dwhdelft.nl": {
   "name": "DWH",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://dwhdelft.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://firmavanbuiten.nl": {
   "name": "Firma van Buiten",
   "kind": "restaurant",
   "events": 0,
   "how": "error",
-  "where": "https://firmavanbuiten.nl"
+  "reason": null
  },
  "https://flowyogaandfood.nl": {
   "name": "Flow Food",
   "kind": "restaurant",
   "events": 9,
   "how": "cpt",
-  "where": "https://flowyogaandfood.nl"
+  "reason": null
  },
  "https://gaiadelft.nl": {
   "name": "GAIA",
   "kind": "restaurant",
   "events": 4,
   "how": "cpt",
-  "where": "https://gaiadelft.nl"
+  "reason": null
  },
  "https://hannodelft.nl": {
   "name": "HANNO Groots Café",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://hannodelft.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://heinde.nl/locatie/delft": {
   "name": "Heinde",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://heinde.nl/locatie/delft"
+  "reason": "points at social media, no on-site programme"
  },
  "https://hoeve-a13.nl": {
   "name": "Hoeve-A13",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://hoeve-a13.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://ilovehummus.nl": {
   "name": "Hummus",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://ilovehummus.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://iltartufo.nl": {
   "name": "Il Tartufo",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://iltartufo.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://incamania.nl": {
   "name": "Inca Mania",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://incamania.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://ishetali.d-kafee.nl": {
   "name": "i.d-kafee",
   "kind": "pub",
   "events": 0,
   "how": "error",
-  "where": "https://ishetali.d-kafee.nl"
+  "reason": null
  },
  "https://itcca.nl/delft": {
   "name": "Tai Chi Chuan",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://itcca.nl/delft"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://kadmium.nl": {
   "name": "Kadmium",
   "kind": "arts_centre",
   "events": 0,
   "how": "none",
-  "where": "https://kadmium.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://kekdelft.nl": {
   "name": "Kek",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://kekdelft.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://kfamily-delft.nl": {
   "name": "Restobar K Family",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://kfamily-delft.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://klein-seinpost.nl": {
   "name": "Klein Seinpost",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://klein-seinpost.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://koffieenzodelft.nl": {
   "name": "Koffie & Zo",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://koffieenzodelft.nl"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://kokamcafe.nl": {
   "name": "Kokam",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://kokamcafe.nl"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://koornbeurs.nl": {
   "name": "De Koornbeurs",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://koornbeurs.nl"
+  "reason": "programme lives on a ticketing host (different domain)"
  },
  "https://kruydt.nl": {
   "name": "Restaurant Kruydt",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://kruydt.nl"
+  "reason": "no event content on the site at all"
  },
  "https://kunsthuisdeik.nl": {
   "name": "DEIK Delftse Eigentijdse Kunst",
   "kind": "arts_centre",
   "events": 0,
   "how": "none",
-  "where": "https://kunsthuisdeik.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://lacubanita.nl/tapas-delft": {
   "name": "La Cubanita",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://lacubanita.nl/tapas-delft"
+  "reason": "points at social media, no on-site programme"
  },
  "https://larchiviste.nl": {
   "name": "L’Archiviste",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://larchiviste.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://leeftapas.nl": {
   "name": "Leef Tapas",
   "kind": "restaurant",
   "events": 0,
   "how": "error",
-  "where": "https://leeftapas.nl"
+  "reason": null
  },
  "https://lefrestaurant.nl": {
   "name": "Restaurant Café Lef",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://lefrestaurant.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://liefhebber-delft.nl": {
   "name": "De Liefhebber",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://liefhebber-delft.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://lorre.nl": {
   "name": "Lorre",
   "kind": "nightclub",
   "events": 0,
   "how": "none",
-  "where": "https://lorre.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://lycheedelft.com": {
   "name": "Lychee",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://lycheedelft.com"
+  "reason": "no event content on the site at all"
  },
  "https://martinusetenendrinken.nl": {
   "name": "Martinus",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://martinusetenendrinken.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://mifitsport.nl": {
   "name": "Mifit",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://mifitsport.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://mixupdelft.nl": {
   "name": "MIXUP",
   "kind": "bar",
   "events": 0,
   "how": "none",
-  "where": "https://mixupdelft.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://mockandmunch.nl": {
   "name": "Mock and Munch",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://mockandmunch.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://mooieboules.nl/delft": {
   "name": "Mooie Boules Delft",
   "kind": "cafe",
   "events": 1,
   "how": "cpt",
-  "where": "https://mooieboules.nl/delft"
+  "reason": null
  },
  "https://museum.royaldelft.com/en/plan-your-visit/location/brasserie1653": {
   "name": "Brasserie1653",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://museum.royaldelft.com/en/plan-your-visit/location/brasserie1653"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://museumpaultetarvanelven.nl": {
   "name": "Museum Paul Tétar Van Elven",
   "kind": "museum",
   "events": 0,
   "how": "none",
-  "where": "https://museumpaultetarvanelven.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://neef-rob.nl": {
   "name": "Neef Rob",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://neef-rob.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://novaela.nl": {
   "name": "Novaela",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://novaela.nl"
+  "reason": "no event content on the site at all"
  },
  "https://outsite.nl": {
   "name": "Outsite",
   "kind": "bar",
   "events": 0,
   "how": "none",
-  "where": "https://outsite.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://padelcity.nl": {
   "name": "Padel City Delft",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://padelcity.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://pizzamanhattan.nl": {
   "name": "Pizza Manhattan",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://pizzamanhattan.nl"
+  "reason": "no event content on the site at all"
  },
  "https://poolandbilliards.nl": {
   "name": "Pool & Billiards",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://poolandbilliards.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://pub.ewi.tudelft.nl": {
   "name": "/Pub",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://pub.ewi.tudelft.nl"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://rataplan.nl/rataplan-kringloopwinkels/kringloopwinkel-rataplan-delft": {
   "name": "RataPlan",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://rataplan.nl/rataplan-kringloopwinkels/kringloopwinkel-rataplan-delft"
+  "reason": "points at social media, no on-site programme"
  },
  "https://rcdk.nl": {
   "name": "Rotaryclub Delft Koningsveld",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://rcdk.nl"
+  "reason": "no event content on the site at all"
  },
  "https://restaurant-charcoal.com": {
   "name": "Charcoal",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://restaurant-charcoal.com"
+  "reason": "points at social media, no on-site programme"
  },
  "https://restaurant-yosshi.nl": {
   "name": "Yosshi",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://restaurant-yosshi.nl"
+  "reason": "no event content on the site at all"
  },
  "https://restaurantazurite.nl": {
   "name": "Azurite",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://restaurantazurite.nl"
+  "reason": "no event content on the site at all"
  },
  "https://restaurantkleinmaarfijn.nl": {
   "name": "Klein Maar Fijn",
   "kind": "restaurant",
   "events": 0,
   "how": "error",
-  "where": "https://restaurantkleinmaarfijn.nl"
+  "reason": null
  },
  "https://restaurantmaharajadelft.nl": {
   "name": "Maharaja",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://restaurantmaharajadelft.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://restaurantumai.nl": {
   "name": "Umai",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://restaurantumai.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://royaldelft.com": {
   "name": "De Koninklijke Porceleyne Fles",
   "kind": "museum",
   "events": 0,
   "how": "error",
-  "where": "https://royaldelft.com"
+  "reason": null
  },
  "https://sanmarco.nl": {
   "name": "San Marco",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://sanmarco.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://settebellodelft.nl": {
   "name": "Settebello",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://settebellodelft.nl"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://sevenhillsdelft.nl": {
   "name": "Sevenhills",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://sevenhillsdelft.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://singalongdelft.wixsite.com/website": {
   "name": "Sing-A-Long",
   "kind": "bar",
   "events": 0,
   "how": "none",
-  "where": "https://singalongdelft.wixsite.com/website"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://sintjansbrug.nl": {
   "name": "Sint Jansbrug",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://sintjansbrug.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://sipwijncafe.com": {
   "name": "Sip Wijncafe",
   "kind": "bar",
   "events": 0,
   "how": "none",
-  "where": "https://sipwijncafe.com"
+  "reason": "no event content on the site at all"
  },
  "https://spareriblinedelft.nl": {
   "name": "Sparerib line",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://spareriblinedelft.nl"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://stach-food.nl": {
   "name": "STACH",
   "kind": "cafe",
   "events": 0,
   "how": "error",
-  "where": "https://stach-food.nl"
+  "reason": null
  },
  "https://svequinox.nl": {
   "name": "Studievereniging Equinox",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://svequinox.nl"
+  "reason": "no event content on the site at all"
  },
  "https://tennislesdelft.nl": {
   "name": "Tennisschool Koos Heiligers",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://tennislesdelft.nl"
+  "reason": "no event content on the site at all"
  },
  "https://uitdekunstdelft.nl": {
   "name": "Uit de Kunst",
   "kind": "cafe",
   "events": 0,
   "how": "error",
-  "where": "https://uitdekunstdelft.nl"
+  "reason": null
  },
  "https://vlier-delft.nl": {
   "name": "Vlier",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://vlier-delft.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://watertorendelft.nl": {
   "name": "De Watertoren",
   "kind": "events_venue",
   "events": 0,
   "how": "none",
-  "where": "https://watertorendelft.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://winkels.hema.nl/nl/delft/hema-delft": {
   "name": "HEMA",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://winkels.hema.nl/nl/delft/hema-delft"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.angkorrestaurant.nl": {
   "name": "Angkor",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.angkorrestaurant.nl"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://www.annemax.nl/vestigingen/delft": {
   "name": "Anne&Max",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.annemax.nl/vestigingen/delft"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.artjacobs.nl": {
   "name": "Galerie Art Jacobs",
   "kind": "gallery",
   "events": 0,
   "how": "none",
-  "where": "https://www.artjacobs.nl"
+  "reason": "programme lives on a ticketing host (different domain)"
  },
  "https://www.artlink.nl/en/home": {
   "name": "Artlink",
   "kind": "gallery",
   "events": 0,
   "how": "none",
-  "where": "https://www.artlink.nl/en/home"
+  "reason": "no event content on the site at all"
  },
  "https://www.atelier146.nl": {
   "name": "Atelier 146",
   "kind": "gallery",
   "events": 0,
   "how": "none",
-  "where": "https://www.atelier146.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.bbcbelvedere.nl": {
   "name": "Belgisch Bier Café Belvédère",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.bbcbelvedere.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.beren.nl/vestigingen/delft": {
   "name": "De Beren",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.beren.nl/vestigingen/delft"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.bezorggriek.nl": {
   "name": "De Kleine Afhaal Griek",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.bezorggriek.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.bijbest.nl": {
   "name": "Bij Best lunchroom",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.bijbest.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.bijharry.com": {
   "name": "Bij Harry",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.bijharry.com"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://www.bombaycorner.nl": {
   "name": "Bombay Corner",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.bombaycorner.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.boterhuis.nl": {
   "name": "'t Boterhuis",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.boterhuis.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.brasserij.nl": {
   "name": "De Brasserij",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.brasserij.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.broodjedelft.com": {
   "name": "Broodje Delft",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.broodjedelft.com"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.browniesanddownies.nl/delft": {
   "name": "Brownies&downieS",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.browniesanddownies.nl/delft"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://www.buenosaires-delft.nl": {
   "name": "Argentijns Steakhouse Buenos Aires",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.buenosaires-delft.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.buurtfabriekdelft.nl": {
   "name": "Buurtfabriek Delft",
   "kind": "community_centre",
   "events": 23,
   "how": "cpt",
-  "where": "https://www.buurtfabriekdelft.nl"
+  "reason": null
  },
  "https://www.cafe-de-v.nl": {
   "name": "Café de V",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.cafe-de-v.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.cafealtijdgezelligheid.com": {
   "name": "Altijd Gezelligheid",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://www.cafealtijdgezelligheid.com"
+  "reason": "no event content on the site at all"
  },
  "https://www.cafedeengel.nl": {
   "name": "De Engel",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.cafedeengel.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.cafehuug.com": {
   "name": "Huug",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.cafehuug.com"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.cafeluna-delft.nl": {
   "name": "Luna",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.cafeluna-delft.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.cafevanoudsdelft.nl": {
   "name": "Café Vanouds De twee kruikjes",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://www.cafevanoudsdelft.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.carre33.nl": {
   "name": "Carré33",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.carre33.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.chinagardendelft.nl": {
   "name": "China Garden",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.chinagardendelft.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.citycafedelft.nl": {
   "name": "City Cafe Delft",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.citycafedelft.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.cozydelft.com": {
   "name": "Cozy",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.cozydelft.com"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://www.dansschool-wesseling.nl": {
   "name": "Dansschool Wesseling",
   "kind": "dance",
   "events": 17,
   "how": "cpt",
-  "where": "https://www.dansschool-wesseling.nl"
+  "reason": null
  },
  "https://www.dashof.nl": {
   "name": "Dashof eten en drinken",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.dashof.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.de-hovenpassage.nl/winkels/unit-71b": {
   "name": "UNIT 71B",
   "kind": "community_centre",
   "events": 0,
   "how": "error",
-  "where": "https://www.de-hovenpassage.nl/winkels/unit-71b"
+  "reason": null
  },
  "https://www.debotanie.nl": {
   "name": "De Botanie",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.debotanie.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.dedelf.nl": {
   "name": "De Delf",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.dedelf.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.deflits.nl": {
   "name": "De Flits Microtheater",
   "kind": "theatre",
   "events": 28,
   "how": "cpt",
-  "where": "https://www.deflits.nl"
+  "reason": null
  },
  "https://www.dekokkerie.com": {
   "name": "De Kokkerie",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.dekokkerie.com"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.delftsbleau.nl": {
   "name": "Bouldercentrum Delfts Bleau",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.delftsbleau.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.delftschezwervers.nl": {
   "name": "De Delftsche Zwervers",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.delftschezwervers.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.delftse-tb.nl": {
   "name": "Delftse Tennisbond",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.delftse-tb.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.delftsepanda.nl": {
   "name": "Afhaalcentrum Panda",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.delftsepanda.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.depelicaan.nl": {
   "name": "De Pelicaan",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://www.depelicaan.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.derijsttafeldelft.nl": {
   "name": "De Rijsttafel",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.derijsttafeldelft.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.eetcafedeverbeelding.nl": {
   "name": "Eetcafé De Verbeelding",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.eetcafedeverbeelding.nl"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://www.eetcafesarnami.nl": {
   "name": "Eetcafe Sarnami",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.eetcafesarnami.nl"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://www.fontanella.nl": {
   "name": "Pizzeria-Ristorante Fontanella",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.fontanella.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.fortuna-korfbal.nl": {
   "name": "Fortuna",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.fortuna-korfbal.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.frankysdelft.nl": {
   "name": "Franky's",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.frankysdelft.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.fratelli.nl": {
   "name": "Fratelli",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.fratelli.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.fu-wah.nl": {
   "name": "Fu Wah Delft",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.fu-wah.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.fukuramen-delft.nl": {
   "name": "Fuku Ramen",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.fukuramen-delft.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.hal015.nl": {
   "name": "Hal015",
   "kind": "theatre",
   "events": 0,
   "how": "none",
-  "where": "https://www.hal015.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.hawaiipokebowl.nl": {
   "name": "Hawaii Poké Bowl",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.hawaiipokebowl.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.hermanos.nl": {
   "name": "Hermanos",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.hermanos.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.hetguldenabc.nl": {
   "name": "Het Gulden ABC",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.hetguldenabc.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.hethoekjedelft.nl": {
   "name": "Het Hoekje",
   "kind": "restaurant",
   "events": 0,
   "how": "error",
-  "where": "https://www.hethoekjedelft.nl"
+  "reason": null
  },
  "https://www.hetkoningshuys.eu": {
   "name": "Het Konings Huys",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.hetkoningshuys.eu"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.hetrietendak.nl": {
   "name": "Het Rieten Dak",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.hetrietendak.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.huszar.nl": {
   "name": "Huszár",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.huszar.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.ilpeperoncino.nl": {
   "name": "il Peperoncino",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.ilpeperoncino.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.imkerverenigingdelft.nl": {
   "name": "Melarium",
   "kind": "museum",
   "events": 0,
   "how": "none",
-  "where": "https://www.imkerverenigingdelft.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.jackaisushi.nl": {
   "name": "Jakai Sushi",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.jackaisushi.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.jazzcafebebop.nl": {
   "name": "Jazzcafé Bebop",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://www.jazzcafebebop.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.kc-delft.nl": {
   "name": "Kynologenclub Delft",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.kc-delft.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.knus.nl": {
   "name": "Knus",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.knus.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.kobuskuch.nl": {
   "name": "Kobus Kuch",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.kobuskuch.nl"
+  "reason": "programme lives on a ticketing host (different domain)"
  },
  "https://www.kopiekoffie.nl": {
   "name": "KopieKoffie",
   "kind": "cafe",
   "events": 5,
   "how": "cpt",
-  "where": "https://www.kopiekoffie.nl"
+  "reason": null
  },
  "https://www.laga.nl": {
   "name": "Delftsche Studenten Roeivereeniging Laga",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.laga.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.lakila.nl": {
   "name": "Lakila",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.lakila.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.latasca.nl": {
   "name": "La Tasca",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.latasca.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.lekkerblauw.nl": {
   "name": "Lekker Blauw",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.lekkerblauw.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.levieuxjean.nl": {
   "name": "Le Vieux Jean",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.levieuxjean.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.lijmencultuur.nl": {
   "name": "Experiment Delft",
   "kind": "restaurant",
   "events": 0,
   "how": "error",
-  "where": "https://www.lijmencultuur.nl"
+  "reason": null
  },
  "https://www.lijmencultuur.nl/locatie/voorhuis": {
   "name": "Voorhuis",
   "kind": "events_venue",
   "events": 0,
   "how": "error",
-  "where": "https://www.lijmencultuur.nl/locatie/voorhuis"
+  "reason": null
  },
  "https://www.locuspublicus.nl": {
   "name": "Locus Publicus",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://www.locuspublicus.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.loetje.nl/locaties/delft": {
   "name": "Loetje",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.loetje.nl/locaties/delft"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.logesilentium.nl": {
   "name": "Loge Silentium",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.logesilentium.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.lotdelft.nl": {
   "name": "Lot",
   "kind": "cafe",
   "events": 0,
   "how": "error",
-  "where": "https://www.lotdelft.nl"
+  "reason": null
  },
  "https://www.lunchroom-yasmin.nl": {
   "name": "Lunchroom Yasmin",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.lunchroom-yasmin.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.milanciaociao.nl": {
   "name": "Ciao Ciao",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.milanciaociao.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.miss-vietnam.nl": {
   "name": "Mr Vietnam & Miss Sushi",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.miss-vietnam.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.moekedelft.nl": {
   "name": "Moeke",
   "kind": "cafe",
   "events": 0,
   "how": "error",
-  "where": "https://www.moekedelft.nl"
+  "reason": null
  },
  "https://www.moodzdelft.nl": {
   "name": "Moodz",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.moodzdelft.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.natuurwacht.nl": {
   "name": "Natuurschuur",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.natuurwacht.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.niceteadelft.nl": {
   "name": "Nice Tea Delft",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.niceteadelft.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.onderons.nl": {
   "name": "Partycentrum OnderOns",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.onderons.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.opendelft.info": {
   "name": "OPEN",
   "kind": "community_centre",
   "events": 0,
   "how": "error",
-  "where": "https://www.opendelft.info"
+  "reason": null
  },
  "https://www.orintea.nl": {
   "name": "Orintea Milktea & Coffee",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.orintea.nl"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://www.pavarotti.nl/vestiging/delft": {
   "name": "Pavarotti",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.pavarotti.nl/vestiging/delft"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.piadabythecanal.com": {
   "name": "Piadaby thecanal",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.piadabythecanal.com"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://www.pizzabeppe.nl/locaties/delft/markt": {
   "name": "Pizza Beppe",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.pizzabeppe.nl/locaties/delft/markt"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.postkantoordelft.nl": {
   "name": "'t Postkantoor",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.postkantoordelft.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.proteus-eretes.nl": {
   "name": "DSR Proteus-Eretes",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.proteus-eretes.nl"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://www.psorcafe.nl": {
   "name": "PSOR Café",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://www.psorcafe.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.radius-cca.org/en": {
   "name": "RADIUS Center for Contemporary Art and Ecology",
   "kind": "arts_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.radius-cca.org/en"
+  "reason": "programme lives on a ticketing host (different domain)"
  },
  "https://www.ramennikkou.com": {
   "name": "Tonkotsu Ramen Nikkou",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.ramennikkou.com"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://www.redjeki.com": {
   "name": "Redjeki",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.redjeki.com"
+  "reason": "no event content on the site at all"
  },
  "https://www.restaurantsprezzatura.nl": {
   "name": "Restaurant Sprezzatura",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.restaurantsprezzatura.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.restaurantswing.nl": {
   "name": "Restaurant Swing",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.restaurantswing.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.revoltclimbing.com": {
   "name": "Revolt Bouldering Gym",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.revoltclimbing.com"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.rietveldtheater.nl": {
   "name": "Rietveld Theater",
   "kind": "theatre",
   "events": 0,
   "how": "none",
-  "where": "https://www.rietveldtheater.nl"
+  "reason": "programme lives on a ticketing host (different domain)"
  },
  "https://www.ringpass.nl": {
   "name": "Ring Pass Delft",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.ringpass.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.rossio.nl": {
   "name": "Rossio",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.rossio.nl"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://www.royal-palace.nl": {
   "name": "Royal Palace",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.royal-palace.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.ruif.nl": {
   "name": "De Ruif",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.ruif.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.saporidicasa.co": {
   "name": "Sapori di Casa",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.saporidicasa.co"
+  "reason": "programme lives on a ticketing host (different domain)"
  },
  "https://www.schaapskooi.nl": {
   "name": "De Schaapskooi",
   "kind": "events_venue",
   "events": 0,
   "how": "none",
-  "where": "https://www.schaapskooi.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.scoutingpaulus.nl/?page_id=1507": {
   "name": "De Blokhut",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.scoutingpaulus.nl/?page_id=1507"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.shanghaihotelholland.com/en/restaurant.html": {
   "name": "Shanghai Garden Restaurant",
   "kind": "restaurant",
   "events": 0,
   "how": "error",
-  "where": "https://www.shanghaihotelholland.com/en/restaurant.html"
+  "reason": null
  },
  "https://www.spijshuisdedis.com": {
   "name": "Spijshuis De Dis",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.spijshuisdedis.com"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.squash-delft.nl": {
   "name": "Squash Delft",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.squash-delft.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.stads-koffyhuis.nl": {
   "name": "Kleyweg's Stads Koffyhuis",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.stads-koffyhuis.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.stadsherbergdemol.nl": {
   "name": "Stadsherberg de Mol",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.stadsherbergdemol.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.starbucks.nl": {
   "name": "Starbucks",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.starbucks.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.steakhousebettyboop.nl": {
   "name": "Steak House Betty Boop",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.steakhousebettyboop.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.steck.nl": {
   "name": "Steck",
   "kind": "bar",
   "events": 0,
   "how": "none",
-  "where": "https://www.steck.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.tabaksmuseum.nl": {
   "name": "Tabaks Historisch Museum Delft",
   "kind": "museum",
   "events": 0,
   "how": "error",
-  "where": "https://www.tabaksmuseum.nl"
+  "reason": null
  },
  "https://www.tastedelft.nl": {
   "name": "Taste",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.tastedelft.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.thaidelft2go.nl": {
   "name": "Thai Delft 2 Go",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.thaidelft2go.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.theaterdeveste.nl": {
   "name": "Theater de Veste",
   "kind": "theatre",
   "events": 0,
   "how": "none",
-  "where": "https://www.theaterdeveste.nl"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.theblueheartbrew.nl": {
   "name": "The Blue Heart Brew",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.theblueheartbrew.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.thegoodegg.nl": {
   "name": "The Good Egg",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.thegoodegg.nl"
+  "reason": "JS-rendered, nothing server-side"
  },
  "https://www.thehangout.eu": {
   "name": "The Hangout",
   "kind": "restaurant",
   "events": 0,
   "how": "error",
-  "where": "https://www.thehangout.eu"
+  "reason": null
  },
  "https://www.theharvest.nl": {
   "name": "The Harvest",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.theharvest.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.thesocialhub.co/delft/eat-and-drink": {
   "name": "The Commons",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.thesocialhub.co/delft/eat-and-drink"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.threesisterspub.nl": {
   "name": "The Three Sisters Pub",
   "kind": "pub",
   "events": 0,
   "how": "none",
-  "where": "https://www.threesisterspub.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.torossantiagodelft.nl": {
   "name": "Toros Santiago",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.torossantiagodelft.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.tudelft.nl/en/x": {
   "name": "X TU Delft",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.tudelft.nl/en/x"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.tudelft.nl/index.php?id=12608": {
   "name": "Cafe X",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.tudelft.nl/index.php?id=12608"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.tudelft.nl/sciencecentre": {
   "name": "Science Centre Delft",
   "kind": "museum",
   "events": 0,
   "how": "none",
-  "where": "https://www.tudelft.nl/sciencecentre"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.tudelft.nl/x": {
   "name": "X TU Delft",
   "kind": "arts_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.tudelft.nl/x"
+  "reason": "events in prose WITH dates (tier-2 / wrapper candidate)"
  },
  "https://www.tudelftcampus.nl/nl/poi/3me-espressobar": {
   "name": "Lemons & beans",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.tudelftcampus.nl/nl/poi/3me-espressobar"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.vakwerkhuis.com/koffie-drinken": {
   "name": "Vakwerkhuis",
   "kind": "cafe",
   "events": 0,
   "how": "error",
-  "where": "https://www.vakwerkhuis.com/koffie-drinken"
+  "reason": null
  },
  "https://www.vermeerdelft.nl": {
   "name": "Vermeer Centrum",
   "kind": "museum",
   "events": 0,
   "how": "none",
-  "where": "https://www.vermeerdelft.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.virgiel.nl": {
   "name": "Virgiel",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.virgiel.nl"
+  "reason": "no event content on the site at all"
  },
  "https://www.wafelsenzoenen.nl": {
   "name": "Wafels & Zoenen",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.wafelsenzoenen.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.washoku-ramen.nl": {
   "name": "Washoku Ramen",
   "kind": "restaurant",
   "events": 0,
   "how": "none",
-  "where": "https://www.washoku-ramen.nl"
+  "reason": "points at social media, no on-site programme"
  },
  "https://www.welzijndelft.nl/sportfondsen-locaties/wijkcentrum-de-parel": {
   "name": "Wijkcentrum De Parel",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.welzijndelft.nl/sportfondsen-locaties/wijkcentrum-de-parel"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.welzijndelft.nl/sportfondsen-locaties/wijkcentrum-de-wending": {
   "name": "Wijkcentrum De Wending",
   "kind": "community_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.welzijndelft.nl/sportfondsen-locaties/wijkcentrum-de-wending"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.wijnhaven.nl": {
   "name": "De Wijnhaven",
   "kind": "cafe",
   "events": 0,
   "how": "none",
-  "where": "https://www.wijnhaven.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.willemvanoranje.nl": {
   "name": "Prinsentheater",
   "kind": "theatre",
   "events": 0,
   "how": "none",
-  "where": "https://www.willemvanoranje.nl"
+  "reason": "mentions programming but publishes no dates"
  },
  "https://www.willemvanoranjedelft.nl": {
   "name": "Grand Café Willem van Oranje",
   "kind": "cafe",
   "events": 0,
   "how": "error",
-  "where": "https://www.willemvanoranjedelft.nl"
+  "reason": null
  },
  "https://www.zwembadkerkpolder.nl": {
   "name": "Zwembad Kerkpolder",
   "kind": "sports_centre",
   "events": 0,
   "how": "none",
-  "where": "https://www.zwembadkerkpolder.nl"
+  "reason": "JS-rendered, nothing server-side"
  }
 }

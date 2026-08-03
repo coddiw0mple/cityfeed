@@ -4,8 +4,8 @@ What building a real event-ingestion pipeline for one city taught us. Written
 after the fact, from measurements rather than intentions, and it contradicts the
 assumption the project started with.
 
-Numbers are from Delft on 2026-08-02: 7 live sources, 233 raw listings, 232
-canonical events, 355 dated occurrences, 75 venues (70 geocoded), 135 tests.
+Numbers are from Delft on 2026-08-03: 7 live sources, 239 raw listings, 234
+canonical events, 285 dated occurrences, 75 venues (70 geocoded), 150 tests.
 
 ---
 
