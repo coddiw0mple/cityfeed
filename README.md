@@ -6,6 +6,9 @@ geocoded), zero model calls in the pipeline.** Every number in this file came
 from running the thing against the real web on 2026-08-02. Where a number is
 bad, it is written down as it is.
 
+**Write-ups:** [findings](docs/findings.md) · [venue census](docs/venue-census.md) ·
+[coverage strategy](docs/coverage-strategy.md) · [adding a city](docs/adding-a-city.md)
+
 **Live:** [cityfeed-delft.vercel.app](https://cityfeed-delft.vercel.app) ·
 [/live.html](https://cityfeed-delft.vercel.app/live.html) (same page, served from the API) ·
 [/docs](https://cityfeed-delft.vercel.app/docs)
