@@ -26,10 +26,19 @@ ROOT = Path(__file__).parent.parent
 README = (ROOT / "README.md").read_text()
 DB = ROOT / "data" / "cityfeed.db"
 
+# The figures are spread across the README and the deep-dive documents, and
+# they moved once already when the README was cut from 5,400 words to 1,200.
+# What has to hold is that the *repository* agrees with itself, not that any
+# one file contains everything -- so these search the whole prose corpus.
+PROSE = "\n".join(
+    p.read_text() for p in [ROOT / "README.md", *sorted((ROOT / "docs").glob("*.md"))]
+    if p.name != "build-brief.md"
+)
 
-def _one(pattern: str, text: str = README) -> tuple[str, ...]:
+
+def _one(pattern: str, text: str = PROSE) -> tuple[str, ...]:
     found = re.findall(pattern, text)
-    assert found, f"README no longer contains a figure matching {pattern!r}"
+    assert found, f"no document contains a figure matching {pattern!r}"
     return found[0] if isinstance(found[0], tuple) else (found[0],)
 
 
@@ -96,4 +105,4 @@ def test_every_header_number_matches_the_database(header):
 def test_no_stale_listing_counts_survive_anywhere(header):
     """A figure fixed in one place and left in another is the recurring failure."""
     for stale in ("233 raw", "237 raw", "215 of 237", "212 of 233", "6 of 8 enabled"):
-        assert stale not in README, f"stale figure still present: {stale!r}"
+        assert stale not in PROSE, f"stale figure still present: {stale!r}"
